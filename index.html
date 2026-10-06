@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#C9A54B">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icones/icone-180.png">
+<link rel="icon" href="icones/icone-192.png">
+<title>Mon Cabinet</title>
+<style>
+:root{
+  --ivoire:#F5F1E8;
+  --carte:#FFFCF6;
+  --nuit:#241E36;
+  --encre:#2B2437;
+  --or:#A8862F;
+  --or-clair:#E7D9B4;
+  --or-fond:#FAF2DF;
+  --gris:#7C7389;
+  --violet:#6B5E8C;
+  --vert:#4E7A55;--vert-fond:#E3EDE2;
+  --orange:#B4732A;--orange-fond:#FAE7CE;
+  --rouge:#A83B34;--rouge-fond:#F6DEDA;
+  --fuchsia:#9B2C6F;--fuchsia-fond:#FAE6F2;--fuchsia-clair:#EBC3DC;
+  --violet-fond:#F0ECF6;
+  --ligne:#E3DACA;
+  --radius:12px;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  --serif:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua','Noto Serif',Georgia,'Times New Roman',serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--ivoire);color:var(--encre);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+h1,h2,.serif{font-family:var(--serif);font-weight:400;letter-spacing:.005em}
+.wrap{max-width:840px;margin:0 auto;padding:20px 18px 60px}
+
+.marque{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.marque .nom{font-family:var(--serif);font-size:17px;letter-spacing:.06em}
+.marque .sous{font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--or);margin-top:1px}
+.filet{height:1px;background:linear-gradient(90deg,var(--or-clair),transparent);flex:1}
+
+.switch{display:inline-flex;background:var(--carte);border:1px solid var(--ligne);border-radius:999px;padding:2px;margin-bottom:14px}
+.switch button{border:0;background:none;border-radius:999px;padding:5px 16px;font-size:13.5px;color:var(--gris)}
+.switch button[aria-pressed="true"]{background:var(--nuit);color:var(--or-clair);font-weight:500}
+
+.datebar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.arrow{width:34px;height:34px;border:1px solid var(--ligne);background:var(--carte);border-radius:50%;display:grid;place-items:center;color:var(--gris);flex:none;transition:.15s}
+.arrow:hover{border-color:var(--or);color:var(--or)}
+.datebtn{border:0;background:none;padding:0;text-align:left;font-family:var(--serif);font-size:clamp(21px,4.8vw,29px);line-height:1.15}
+.datebtn:hover{color:var(--or)}
+.cal{width:34px;height:34px;border:1px solid var(--or-clair);background:var(--or-fond);border-radius:9px;display:grid;place-items:center;color:var(--or);flex:none;transition:.15s}
+.cal:hover{border-color:var(--or)}
+.cal svg{width:17px;height:17px;display:block}
+.today-chip{border:1px solid var(--ligne);background:var(--carte);color:var(--gris);border-radius:999px;padding:5px 12px;font-size:12.5px}
+.today-chip:hover{border-color:var(--or);color:var(--or)}
+.daycount{color:var(--gris);font-size:13.5px;margin:8px 0 0}
+.lunebadge{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--or-clair);background:var(--or-fond);color:var(--or);border-radius:999px;padding:3px 13px 3px 5px;font-size:12.5px;font-weight:500;letter-spacing:.1em;vertical-align:middle}
+.lunebadge svg{display:block}
+.jnom .lune7{display:inline-flex;align-items:center;gap:3px;color:var(--or);font-size:10.5px;letter-spacing:.06em;margin-top:2px}
+
+.tabs{display:flex;gap:2px;margin:20px 0 20px;border-bottom:1px solid var(--ligne);overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tab{white-space:nowrap}
+.tab{border:0;background:none;padding:9px 14px;margin-bottom:-1px;color:var(--gris);border-bottom:2px solid transparent;font-size:14.5px}
+.tab:hover{color:var(--encre)}
+.tab[aria-selected="true"]{color:var(--or);border-bottom-color:var(--or);font-weight:500}
+
+/* grille du jour */
+.grille{border-top:1px solid var(--ligne)}
+.ligne{display:grid;grid-template-columns:74px 1fr;gap:12px;border-bottom:1px solid var(--ligne);align-items:stretch}
+.hcell{display:flex;align-items:center;justify-content:flex-end;padding:10px 0;font-variant-numeric:tabular-nums;font-size:15px;color:var(--or);font-weight:500}
+.hcell button{border:0;background:none;padding:2px 5px;border-radius:6px;border:1px dashed transparent;color:var(--violet);font-variant-numeric:tabular-nums;font-weight:500}
+.hcell button:hover{border-color:var(--violet);background:var(--violet-fond)}
+.ligne.ouvert .hcell{color:var(--violet)}
+.libre{border:0;background:none;text-align:left;color:var(--gris);font-size:13.5px;padding:11px 4px;width:100%;border-radius:8px}
+.libre.ouvert{color:var(--violet);opacity:.72;font-style:italic;font-size:13px}
+.libre.ouvert:hover{background:var(--violet-fond);opacity:1}
+.coche{flex:none;width:20px;height:20px;margin-top:2px;border:1.5px solid var(--or);border-radius:6px;background:none;display:grid;place-items:center;font-size:12px;color:var(--or);line-height:1}
+.coche.v{border-color:var(--violet);color:var(--violet)}
+.tete{display:flex;gap:11px;align-items:flex-start}
+.rdvbloc.fait .who,.rdvbloc.fait .meta,.rdvbloc.fait .cardnote{text-decoration:line-through}
+.ouvertbloc{background:var(--violet-fond);border:1px solid #DFD7EC;border-left:3px solid var(--violet);border-radius:var(--radius);padding:11px 14px;margin:7px 0}
+.ouvertbloc .otexte{white-space:pre-wrap;font-size:14px;color:#4A4257;flex:1;min-width:0}
+.ouvertbloc.fait .otexte{text-decoration:line-through}
+.chip.occ.fait{text-decoration:line-through;opacity:.75}
+.libre:hover{background:var(--or-fond);color:var(--or)}
+.rdvbloc{background:var(--carte);border:1px solid var(--ligne);border-left:3px solid var(--nuit);border-radius:var(--radius);padding:11px 14px;margin:7px 0}
+.who{font-family:var(--serif);font-size:17.5px}
+.meta{color:var(--gris);font-size:12.5px;margin-top:2px}
+.cardnote{margin-top:7px;font-size:13.5px;color:#4A4257;white-space:pre-wrap}
+.profilbloc{margin-top:7px;font-size:13px;color:var(--or);white-space:pre-wrap;border-left:2px solid var(--or-clair);padding-left:9px}
+.cardacts{display:flex;gap:14px;margin-top:9px;flex-wrap:wrap}
+.linkbtn{border:0;background:none;padding:0;color:var(--gris);font-size:12.5px;text-decoration:underline;text-underline-offset:3px}
+.linkbtn:hover{color:var(--or)}
+.linkbtn.danger:hover{color:#993030}
+
+/* formations */
+.formbloc{background:var(--fuchsia-fond);border:1px solid var(--fuchsia-clair);border-left:3px solid var(--fuchsia);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px}
+.formtitre{font-family:var(--serif);font-size:18px;color:var(--fuchsia)}
+.parts{display:flex;flex-direction:column;gap:0;margin-top:11px;border-top:1px solid var(--fuchsia-clair)}
+.pchip{display:flex;align-items:center;gap:9px;padding:7px 2px;border-bottom:1px solid var(--fuchsia-clair);font-size:13.5px}
+.pchip:last-child{border-bottom:0}
+.pchip::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--fuchsia);flex:none;opacity:.6}
+.pchip span{flex:1;min-width:0}
+.pchip button{border:0;background:none;padding:0 4px;color:var(--gris);font-size:15px;line-height:1}
+.pchip button:hover{color:var(--fuchsia)}
+.partscount{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fuchsia);margin:14px 0 0}
+.chip.forma{background:var(--fuchsia-fond);border:1px solid var(--fuchsia-clair);color:var(--fuchsia)}
+.gold{background:var(--fuchsia-fond);color:var(--fuchsia);border-color:var(--fuchsia)}
+.gold:hover{background:var(--fuchsia-clair)}
+.histline .tag{color:var(--fuchsia)}
+
+/* semaine */
+.sem{border-top:1px solid var(--ligne)}
+.jrow{display:grid;grid-template-columns:82px 1fr;gap:12px;padding:11px 0;border-bottom:1px solid var(--ligne);align-items:start}
+.jrow.auj{background:linear-gradient(90deg,var(--or-fond),transparent 65%);margin:0 -10px;padding:11px 10px;border-radius:8px}
+.jnom{border:0;background:none;padding:0;text-align:left;font-size:12.5px;color:var(--gris);line-height:1.25}
+.jnom b{display:block;font-family:var(--serif);font-size:20px;color:var(--encre);font-weight:400}
+.jnom:hover b{color:var(--or)}
+.jnom .lp{color:var(--or);font-size:11px;letter-spacing:.06em}
+.jcorps{display:flex;flex-wrap:wrap;gap:6px;padding-top:3px}
+.chip{border-radius:999px;padding:5px 12px;font-size:13px;border:1px solid transparent;text-align:left}
+.chip.occ{background:var(--nuit);color:#F3EEE2}
+.chip.occ:hover{background:#332a4d}
+.chip.libre2{background:none;border:1px dashed var(--ligne);color:var(--gris)}
+.chip.libre2:hover{border-color:var(--or);color:var(--or)}
+.chip.forma{background:var(--or-fond);border:1px solid var(--or-clair);color:var(--or)}
+
+.empty{border:1px dashed var(--ligne);border-radius:var(--radius);padding:28px 22px;text-align:center;color:var(--gris);font-size:14px}
+.empty strong{display:block;color:var(--encre);font-family:var(--serif);font-size:17px;font-weight:400;margin-bottom:5px}
+
+.primary{background:var(--nuit);color:#F3EEE2;border:0;border-radius:999px;padding:11px 20px;font-weight:500;font-size:14.5px}
+.primary:hover{background:#332a4d}
+.gold{background:var(--or-fond);color:var(--or);border:1px solid var(--or);border-radius:999px;padding:11px 20px;font-size:14.5px}
+.gold:hover{background:var(--or-clair)}
+.ghost{background:var(--carte);border:1px solid var(--ligne);border-radius:999px;padding:9px 16px;font-size:14px}
+.ghost:hover{border-color:var(--or);color:var(--or)}
+.addrow{margin-top:22px;display:flex;gap:8px;flex-wrap:wrap}
+
+/* personnes */
+.search{width:100%;background:var(--carte);border:1px solid var(--ligne);border-radius:999px;padding:11px 16px;margin-bottom:16px}
+.search:focus{outline:2px solid var(--or);outline-offset:1px;border-color:transparent}
+.person{background:var(--carte);border:1px solid var(--ligne);border-radius:var(--radius);margin-bottom:9px;overflow:hidden}
+.phead{width:100%;display:flex;align-items:baseline;gap:10px;padding:13px 15px;border:0;background:none;text-align:left}
+.pname{font-family:var(--serif);font-size:17px;flex:1;min-width:0}
+.pcount{color:var(--gris);font-size:12.5px;white-space:nowrap}
+.pbody{padding:14px 15px 15px;border-top:1px solid var(--ligne)}
+.next{background:var(--or-fond);border:1px solid var(--or-clair);border-radius:10px;padding:10px 13px;font-size:13.5px;margin-bottom:14px}
+.next b{display:block;font-weight:500}
+.next span{color:#4A4257;display:block;margin-top:3px;white-space:pre-wrap}
+.sectitle{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--or);margin:16px 0 6px}
+.histo{list-style:none;margin:0;padding:0}
+.histo li{border-bottom:1px solid var(--ligne)}
+.histo li:last-child{border-bottom:0}
+.histline{width:100%;display:flex;gap:10px;align-items:baseline;padding:9px 0;border:0;background:none;text-align:left;font-size:13.5px}
+.histline time{font-variant-numeric:tabular-nums;color:var(--gris);white-space:nowrap;font-size:13px}
+.histline span{flex:1;min-width:0;color:#4A4257;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.histline em{font-style:normal;color:var(--or);font-size:15px;line-height:1}
+.histline .tag{flex:none;color:var(--or);font-size:11px;letter-spacing:.08em}
+.crbox{padding:2px 0 14px}
+.crbox label{display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gris);margin-bottom:6px}
+.crbox textarea{width:100%;border:1px solid var(--ligne);border-radius:10px;padding:10px 12px;background:#fff;resize:vertical;min-height:110px;line-height:1.55}
+.crbox textarea:focus{outline:2px solid var(--or);outline-offset:-1px;border-color:transparent}
+.crhint{font-size:11.5px;color:var(--gris);margin:6px 0 0}
+.pacts{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.protos{background:var(--carte);border:1px solid var(--ligne);border-radius:var(--radius);overflow:hidden;max-width:520px}
+.proto{display:flex;align-items:center;gap:14px;padding:11px 14px;border-bottom:1px solid var(--ligne)}
+.proto:last-child{border-bottom:0}
+.proto span{flex:1;min-width:0}
+.sheet.fiche{max-width:560px}
+.fichetete{display:flex;align-items:flex-start;gap:12px}
+.fichetete h2{font-size:23px}
+.reperes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+.repere{background:var(--or-fond);border-radius:10px;padding:9px 12px}
+.repere span{display:block;font-size:11px;color:var(--gris)}
+.repere b{font-size:19px;font-weight:500;color:var(--or)}
+.seance{border-top:1px solid var(--ligne);padding:12px 0}
+.seance textarea{width:100%;border:1px solid var(--ligne);border-radius:10px;padding:9px 11px;background:#fff;resize:vertical;min-height:72px;line-height:1.5}
+.seance textarea:focus,.sheet.fiche #fp:focus{outline:2px solid var(--or);outline-offset:-1px;border-color:transparent}
+.seance select{width:100%;border:1px solid var(--ligne);border-radius:10px;padding:9px 11px;background:#fff}
+.crbox select{width:100%;border:1px solid var(--ligne);border-radius:10px;padding:9px 11px;background:#fff;margin-bottom:8px}
+
+/* pense-bête */
+.notebox{background:var(--carte);border:1px solid var(--ligne);border-radius:var(--radius);padding:12px;margin-bottom:18px}
+.notebox textarea{width:100%;border:0;background:none;resize:vertical;min-height:64px;outline:none;line-height:1.55}
+.noteitem{background:var(--carte);border:1px solid var(--ligne);border-left:3px solid var(--or-clair);border-radius:var(--radius);padding:12px 14px;margin-bottom:9px;display:flex;gap:12px;align-items:flex-start}
+.noteitem.done{opacity:.6;border-left-color:var(--ligne)}
+.noteitem.done .notetext{text-decoration:line-through}
+.check{flex:none;width:19px;height:19px;margin-top:2px;border:1.5px solid var(--or);border-radius:6px;background:none;display:grid;place-items:center;font-size:12px;color:var(--or);line-height:1}
+.notetext{flex:1;white-space:pre-wrap;font-size:14.5px;line-height:1.55;min-width:0;word-break:break-word}
+.notedate{display:block;font-size:11.5px;color:var(--gris);margin-top:6px}
+
+/* fenêtres */
+.overlay{position:fixed;inset:0;background:rgba(36,30,54,.42);display:flex;align-items:flex-end;justify-content:center;z-index:50}
+@media(min-width:600px){.overlay{align-items:center;padding:20px}}
+.sheet{background:var(--carte);width:100%;max-width:470px;max-height:92vh;overflow-y:auto;overflow-x:hidden;border-radius:16px 16px 0 0;padding:22px}
+@media(min-width:600px){.sheet{border-radius:16px}}
+.sheet h2{font-size:21px;margin:0 0 4px}
+.sheet .sur{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--or);margin:0 0 16px}
+.field{margin-bottom:13px}
+.field label{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gris);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--ligne);border-radius:10px;padding:10px 12px;background:#fff}
+.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--or);outline-offset:-1px;border-color:transparent}
+.field textarea{resize:vertical;min-height:70px}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.err{color:#993030;font-size:13px;margin:0 0 12px;display:none}
+.sheetacts{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
+.inline{display:flex;gap:8px}
+.inline input{flex:1}
+
+/* calendrier */
+.calsheet{max-width:400px;padding-left:16px;padding-right:16px}
+.calsheet .calnav .mois{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.calnav{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:12px}
+.calnav .mois{font-family:var(--serif);font-size:19px;text-align:center;flex:1}
+.calnav button{width:30px;height:30px;border:1px solid var(--ligne);background:var(--carte);border-radius:8px;color:var(--gris);font-size:13px}
+.calnav button:hover{border-color:var(--or);color:var(--or)}
+.calgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;width:100%}
+.caldow{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--gris);text-align:center;padding-bottom:5px}
+.cell{aspect-ratio:1;min-width:0;overflow:hidden;border:1px solid transparent;background:none;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:1px;position:relative}
+.cell:hover{background:var(--ivoire)}
+.cell .n{font-size:14px;font-variant-numeric:tabular-nums}
+.cell.vide{visibility:hidden}
+.cell.auj{border-color:var(--nuit)}
+.cell.sel{background:var(--nuit);color:#F3EEE2}
+.cell.forma{background:#FF29C3;border-color:#FF29C3;box-shadow:0 0 8px rgba(255,41,195,.7)}
+.cell.forma .n{color:#fff;font-weight:600}
+.cell.sel.forma{background:var(--nuit)}
+.cell.calme{background:#39FF6A;border-color:#39FF6A;box-shadow:0 0 7px rgba(57,255,106,.65)}
+.cell.moyen{background:#FF9F1A;border-color:#FF9F1A;box-shadow:0 0 7px rgba(255,159,26,.7)}
+.cell.charge{background:#FF2D55;border-color:#FF2D55;box-shadow:0 0 8px rgba(255,45,85,.7)}
+.cell.calme .n{color:#08331A;font-weight:700}
+.cell.moyen .n,.cell.charge .n{color:#fff;font-weight:700}
+.cell.calme .lune{color:#08331A}
+.cell.moyen .lune,.cell.charge .lune,.cell.forma .lune{color:#fff}
+.cell.calme:hover,.cell.moyen:hover,.cell.charge:hover,.cell.forma:hover{filter:brightness(1.08)}
+.cell.sel .n{color:#F3EEE2}
+.cell.sel{box-shadow:inset 0 0 0 2px var(--or-clair)}
+.cell .lune{font-size:8px;font-weight:600;letter-spacing:0;color:var(--or);display:flex;align-items:center;gap:2px;line-height:1;max-width:100%}
+.cell .lune svg{display:block}
+.callegende{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;font-size:11.5px;color:var(--gris)}
+.callegende span{display:flex;align-items:center;gap:5px}
+.callegende i{width:11px;height:11px;border-radius:4px;display:block;border:1px solid}
+.callegende i{border:0}
+.callegende i.v{background:#39FF6A;box-shadow:0 0 5px rgba(57,255,106,.7)}
+.callegende i.o{background:#FF9F1A;box-shadow:0 0 5px rgba(255,159,26,.7)}
+.callegende i.r{background:#FF2D55;box-shadow:0 0 5px rgba(255,45,85,.7)}
+.callegende i.f{background:#FF29C3;box-shadow:0 0 5px rgba(255,41,195,.7)}
+
+footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--ligne);display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+footer .linkbtn{font-size:12.5px}
+footer span{color:var(--gris);font-size:12.5px}
+:focus-visible{outline:2px solid var(--or);outline-offset:2px;border-radius:4px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="marque">
+    <div><div class="nom">Mon Cabinet</div><div class="sous">Anaëlya</div></div>
+    <div class="filet"></div>
+  </div>
+
+  <div id="head"></div>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" data-tab="jour" aria-selected="true">Journée</button>
+    <button class="tab" role="tab" data-tab="gens" aria-selected="false">Personnes</button>
+    <button class="tab" role="tab" data-tab="notes" aria-selected="false">Pense-bête</button>
+    <button class="tab" role="tab" data-tab="reglages" aria-selected="false">Réglages</button>
+  </nav>
+
+  <main id="view"></main>
+
+  <footer>
+    <span id="stats"></span>
+    <button class="linkbtn" id="export">Enregistrer une sauvegarde</button>
+    <button class="linkbtn" id="importbtn">Restaurer une sauvegarde</button>
+    <input type="file" id="importfile" accept="application/json" hidden>
+  </footer>
+</div>
+<div id="modal"></div>
+
+<script>
+/* ============ constantes ============ */
+const KEY = 'mon-cabinet-v1';
+const MATIN = ['05:30','06:15','07:00','07:45','08:30','09:15','10:00','10:45','11:30','12:15','13:00','13:45','14:30'];
+const APREM_DEFAUT = ['16:00','17:00','18:00','19:00'];
+const PROTO_DEFAUT = ['Scanner','Soins énergétiques',"Loi d'attraction",'Régression','Soins occultes','Contact médiumnique','Mémoire transgénérationnelle','Voyance','Développement des perceptions'];
+
+let data = { rdv:[], gens:{}, notes:[], formations:[], ouverts:{}, aprem:[...APREM_DEFAUT], protocoles:[...PROTO_DEFAUT] };
+let onglet='jour', vue='jour', jour=isoToday(), recherche='', ouvert=null, ouvertCR=null, calMois=null, partTmp=[], saveTimer=null, ficheOuverte=null;
+
+/* ============ dates ============ */
+function isoToday(){ return iso(new Date()); }
+function iso(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function fromIso(s){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+function decale(s,n){ const d=fromIso(s); d.setDate(d.getDate()+n); return iso(d); }
+function lundiDe(s){ return decale(s, -((fromIso(s).getDay()+6)%7)); }
+function estDimanche(s){ return fromIso(s).getDay()===0; }
+function longDate(s){ return fromIso(s).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); }
+function courtDate(s){ return fromIso(s).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit'}); }
+function libelleSemaine(l){
+  const a=fromIso(l), b=fromIso(decale(l,6)), mm=d=>d.toLocaleDateString('fr-FR',{month:'long'});
+  return a.getMonth()===b.getMonth()
+    ? a.getDate()+' – '+b.getDate()+' '+mm(b)+' '+b.getFullYear()
+    : a.getDate()+' '+mm(a)+' – '+b.getDate()+' '+mm(b)+' '+b.getFullYear();
+}
+function esc(s){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function cle(p,n){ return (p+' '+n).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim(); }
+function minutes(h){ const [a,b]=h.split(':').map(Number); return a*60+b; }
+function hhmm(t){ return String(Math.floor(t/60)%24).padStart(2,'0')+'h'+String(t%60).padStart(2,'0'); }
+function jolie(h){ return h.replace(':','h'); }
+function duree(m){ const h=Math.floor(m/60), r=m%60; if(h&&r) return h+' h '+String(r).padStart(2,'0'); if(h) return h+' h'; return r+' min'; }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+/* ============ lunaisons (Meeus, termes principaux) ============ */
+function phaseJD(k, frac){
+  k = k + frac;
+  const T=k/1236.85, R=Math.PI/180;
+  let jde = 2451550.09766 + 29.530588861*k + 0.00015437*T*T - 0.000000150*T*T*T;
+  const E = 1 - 0.002516*T - 0.0000074*T*T;
+  const M  = (2.5534 + 29.10535670*k - 0.0000014*T*T)*R;
+  const Mp = (201.5643 + 385.81693528*k + 0.0107582*T*T)*R;
+  const F  = (160.7108 + 390.67050284*k - 0.0016118*T*T)*R;
+  const O  = (124.7746 - 1.56375588*k + 0.0020672*T*T)*R;
+  const s=Math.sin, pleine = frac===0.5;
+  jde += (pleine?-0.40614:-0.40720)*s(Mp)
+       + (pleine? 0.17302:0.17241)*E*s(M)
+       + (pleine? 0.01614:0.01608)*s(2*Mp)
+       + (pleine? 0.01043:0.01039)*s(2*F)
+       + (pleine? 0.00734:0.00739)*E*s(Mp-M)
+       - 0.00515*E*s(Mp+M) + 0.00209*E*E*s(2*M)
+       - 0.00111*s(Mp-2*F) - 0.00057*s(Mp+2*F)
+       + 0.00056*E*s(2*Mp+M) - 0.00042*s(3*Mp)
+       + 0.00042*E*s(M+2*F) + 0.00038*E*s(M-2*F)
+       - 0.00024*E*s(2*Mp-M) - 0.00017*s(O) - 0.00007*s(Mp+2*M);
+  return jde;
+}
+function jdIso(jd){ return iso(new Date((jd-2440587.5)*86400000)); }
+function lunes(debut, fin){
+  const out={}, d=fromIso(debut);
+  let k0 = Math.floor(((d.getFullYear()+d.getMonth()/12)-2000)*12.3685) - 2;
+  for(let i=0;i<8;i++){
+    const nl=jdIso(phaseJD(k0+i,0)), pl=jdIso(phaseJD(k0+i,0.5));
+    if(nl>=debut&&nl<=fin) out[nl]='NL';
+    if(pl>=debut&&pl<=fin) out[pl]='PL';
+  }
+  return out;
+}
+function luneDu(d){ return lunes(decale(d,-1),decale(d,1))[d]||null; }
+
+/* ============ stockage ============ */
+async function charger(){
+  try{
+    const brut = localStorage.getItem(KEY);
+    if(brut){ const p=JSON.parse(brut);
+      data={rdv:p.rdv||[], gens:p.gens||{}, notes:p.notes||[], formations:p.formations||[], ouverts:p.ouverts||{}, aprem:(p.aprem&&p.aprem.length)?p.aprem:[...APREM_DEFAUT], protocoles:p.protocoles||[...PROTO_DEFAUT]};
+    }
+  }catch(e){}
+  rendre();
+}
+function sauver(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{ try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(e){ console.error('Enregistrement impossible', e); } },250);
+}
+
+/* ============ sélecteurs ============ */
+function grilleDu(){ return [...MATIN, ...data.aprem].sort((a,b)=>minutes(a)-minutes(b)); }
+function rdvDuJour(d){ return data.rdv.filter(r=>r.date===d).sort((a,b)=>a.heure.localeCompare(b.heure)); }
+function formsDuJour(d){ return data.formations.filter(f=>f.date===d).sort((a,b)=>a.debut.localeCompare(b.debut)); }
+function rdvDe(k){ return data.rdv.filter(r=>r.cle===k); }
+function formsDe(k){ return data.formations.filter(f=>(f.parts||[]).some(p=>p.cle===k)); }
+function histoDe(k){
+  const a = rdvDe(k).map(r=>({type:'rdv', date:r.date, heure:r.heure, id:r.id, r}));
+  const b = formsDe(k).map(f=>({type:'form', date:f.date, heure:f.debut, id:f.id, f}));
+  return [...a,...b].sort((x,y)=>(x.date+x.heure).localeCompare(y.date+y.heure));
+}
+function prochainDe(k){
+  const t=isoToday();
+  return rdvDe(k).filter(r=>r.date>=t).sort((a,b)=>(a.date+a.heure).localeCompare(b.date+b.heure))[0]||null;
+}
+function listeGens(){
+  const q=cle(recherche,'');
+  return Object.values(data.gens).map(p=>{
+    const h=histoDe(p.cle);
+    return {...p, nb:h.length, dernier:h.filter(x=>x.date<=isoToday()).pop()||null, prochain:prochainDe(p.cle)};
+  }).filter(p=>!q||cle(p.prenom,p.nom).includes(q)||(p.tel||'').includes(recherche.trim()))
+    .sort((a,b)=>(a.nom+a.prenom).localeCompare(b.nom+b.prenom,'fr'));
+}
+
+/* ============ rendu ============ */
+const ICONE_CAL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>';
+
+function svgLune(t,px){
+  const d=`width="${px}" height="${px}" viewBox="0 0 32 32"`;
+  if(t==='PL') return `<svg ${d} aria-hidden="true" style="filter:drop-shadow(0 0 1px rgba(0,0,0,.35))"><defs><radialGradient id="pl" cx="38%" cy="34%"><stop offset="0" stop-color="#F6E4AE"/><stop offset="1" stop-color="#C9A54B"/></radialGradient></defs>
+    <circle cx="16" cy="16" r="14" fill="url(#pl)"/>
+    <circle cx="11" cy="11" r="3.4" fill="#B8933E" opacity=".38"/>
+    <circle cx="21" cy="18" r="2.4" fill="#B8933E" opacity=".32"/>
+    <circle cx="14" cy="22" r="1.7" fill="#B8933E" opacity=".28"/>
+    <circle cx="22" cy="10" r="1.2" fill="#B8933E" opacity=".25"/></svg>`;
+  return `<svg ${d} aria-hidden="true"><circle cx="16" cy="16" r="14" fill="#241E36"/>
+    <path d="M16 2a14 14 0 0 1 0 28A14 14 0 0 0 16 2Z" fill="#A8862F" opacity=".22"/>
+    <circle cx="16" cy="16" r="13.2" fill="none" stroke="#C9A54B" stroke-width="1.3" opacity=".85"/></svg>`;
+}
+function badgeLune(t){
+  if(!t) return '';
+  return `<span class="lunebadge">${svgLune(t,24)}${t}</span>`;
+}
+
+function rendre(){
+  document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected', t.dataset.tab===onglet));
+  head();
+  const v=document.getElementById('view');
+  v.innerHTML = onglet==='jour' ? (vue==='jour'?vueJour():vueSemaine()) : onglet==='gens' ? vueGens() : onglet==='notes' ? vueNotes() : vueReglages();
+  const n=Object.keys(data.gens).length;
+  document.getElementById('stats').textContent =
+    data.rdv.length+' rendez-vous · '+data.formations.length+' formation'+(data.formations.length>1?'s':'')+' · '+n+' personne'+(n>1?'s':'');
+}
+
+function head(){
+  const h=document.getElementById('head');
+  if(onglet!=='jour'){ h.innerHTML=''; return; }
+  const sem = vue==='semaine', lundi=lundiDe(jour);
+  const nJ = rdvDuJour(jour).length, nF = formsDuJour(jour).length;
+  const nSem = data.rdv.filter(r=>r.date>=lundi&&r.date<=decale(lundi,6)).length;
+  const memeSem = lundi===lundiDe(isoToday());
+  const l = sem?null:luneDu(jour);
+  h.innerHTML=`
+    <div class="switch">
+      <button data-vue="jour" aria-pressed="${!sem}">Jour</button>
+      <button data-vue="semaine" aria-pressed="${sem}">Semaine</button>
+    </div>
+    <div class="datebar">
+      <button class="arrow" id="prev" aria-label="Précédent">‹</button>
+      <button class="datebtn" id="pickbtn">${esc(sem?libelleSemaine(lundi):longDate(jour))}</button>
+      <button class="cal" id="calbtn" aria-label="Ouvrir le calendrier">${ICONE_CAL}</button>
+      <button class="arrow" id="next" aria-label="Suivant">›</button>
+      ${(sem?!memeSem:jour!==isoToday())?'<button class="today-chip" id="today">Aujourd\'hui</button>':''}
+    </div>
+    <p class="daycount">${sem
+      ? (nSem===0?'Aucun rendez-vous cette semaine':nSem+' rendez-vous cette semaine')
+      : (estDimanche(jour)
+          ? (nF===0?'Dimanche · journée de formation':nF+' formation'+(nF>1?'s':''))
+          : (nJ===0?'Journée libre':nJ+' rendez-vous'))+' '+badgeLune(l)}</p>`;
+}
+
+function profilDe(k){ const p=data.gens[k]; return p&&p.note?p.note:''; }
+function blocRdv(r){
+  return `<div class="rdvbloc${r.fait?' fait':''}">
+    <div class="tete">
+      <button class="coche" data-fait="${r.id}" aria-label="${r.fait?'Rendez-vous honoré, décocher':'Marquer comme honoré'}">${r.fait?'✓':''}</button>
+      <div style="flex:1;min-width:0">
+        <div class="who">${esc(r.prenom)} ${esc(r.nom)}</div>
+        ${r.tel?`<div class="meta">${esc(r.tel)}</div>`:''}
+        ${profilDe(r.cle)?`<div class="profilbloc">${esc(profilDe(r.cle))}</div>`:''}
+        ${r.note?`<div class="cardnote">${esc(r.note)}</div>`:''}
+      </div>
+    </div>
+    <div class="cardacts">
+      <button class="linkbtn" data-report="${r.id}">Reporter</button>
+      <button class="linkbtn danger" data-del="${r.id}">Supprimer</button>
+    </div></div>`;
+}
+
+function blocOuvert(k){
+  const o=data.ouverts[k];
+  return `<div class="ouvertbloc${o.fait?' fait':''}">
+    <div class="tete">
+      <button class="coche v" data-faito="${k}" aria-label="${o.fait?'Fait, décocher':'Marquer comme fait'}">${o.fait?'✓':''}</button>
+      <div class="otexte">${esc(o.texte)}</div>
+    </div>
+    <div class="cardacts">
+      <button class="linkbtn" data-edito="${k}">Modifier</button>
+      <button class="linkbtn danger" data-delo="${k}">Effacer</button>
+    </div></div>`;
+}
+
+function vueJour(){
+  if(estDimanche(jour)){
+    const fs=formsDuJour(jour);
+    let html = fs.length ? '' : `<div class="empty"><strong>Dimanche</strong>Pas de rendez-vous ce jour. C'est la journée des formations et des stages.</div>`;
+    fs.forEach(f=>{
+      html += `<div class="formbloc">
+        <div class="formtitre">${esc(f.titre)}</div>
+        <div class="meta">${esc(jolie(f.debut))} – ${esc(jolie(f.fin))}</div>
+        ${(f.parts||[]).length?`<p class="partscount">${f.parts.length} participant${f.parts.length>1?'s':''}</p>
+          <div class="parts">${f.parts.map(p=>`<div class="pchip"><span>${esc(p.nom)}</span></div>`).join('')}</div>`:''}
+        ${f.notes?`<div class="cardnote">${esc(f.notes)}</div>`:''}
+        <div class="cardacts">
+          <button class="linkbtn" data-editf="${f.id}">Modifier</button>
+          <button class="linkbtn danger" data-delf="${f.id}">Supprimer</button>
+        </div></div>`;
+    });
+    return html + `<div class="addrow"><button class="gold" data-newf="1">Ajouter une formation</button></div>`;
+  }
+
+  const liste=rdvDuJour(jour), g=grilleDu();
+  const pris={}; liste.forEach(r=>{ (pris[r.heure]=pris[r.heure]||[]).push(r); });
+  const heures=[...new Set([...g, ...liste.map(r=>r.heure)])].sort((a,b)=>minutes(a)-minutes(b));
+  let html='<div class="grille">';
+  heures.forEach(h=>{
+    const rs=pris[h]||[], modifiable=data.aprem.includes(h);
+    const kO=jour+'|'+h;
+    const vide = modifiable
+      ? (data.ouverts[kO] ? blocOuvert(kO) : `<button class="libre ouvert" data-ouvrir="${kO}">temps ouvert — écrire une note</button>`)
+      : `<button class="libre" data-slot="${jour}|${h}">libre — poser un rendez-vous</button>`;
+    html += `<div class="ligne${rs.length?' pris':modifiable?' ouvert':''}">
+      <div class="hcell">${modifiable?`<button data-hedit="${h}" title="Modifier cet horaire">${esc(jolie(h))}</button>`:esc(jolie(h))}</div>
+      <div>${rs.length ? rs.map(blocRdv).join('') : vide}</div>
+    </div>`;
+  });
+  return html+'</div><div class="addrow"><button class="primary" data-new="1">Nouveau rendez-vous</button></div>';
+}
+
+function vueSemaine(){
+  const lundi=lundiDe(jour), auj=isoToday(), lun=lunes(lundi,decale(lundi,6));
+  let html='<div class="sem">';
+  for(let i=0;i<7;i++){
+    const d=decale(lundi,i), l=rdvDuJour(d), fs=formsDuJour(d);
+    const nom=fromIso(d).toLocaleDateString('fr-FR',{weekday:'short'}).replace('.','');
+    const mois=fromIso(d).toLocaleDateString('fr-FR',{month:'short'}).replace('.','');
+    let corps='';
+    if(estDimanche(d)){
+      fs.forEach(f=>{ corps+=`<button class="chip forma" data-editf="${f.id}">${esc(jolie(f.debut))} · ${esc(f.titre)}</button>`; });
+      corps+=`<button class="chip libre2" data-gotof="${d}">${fs.length?'ajouter une formation':'formation ou stage'}</button>`;
+    }else{
+      l.forEach(r=>{ corps+=`<button class="chip occ${r.fait?' fait':''}" data-edit="${r.id}"><b>${esc(jolie(r.heure))}</b> · ${esc(r.prenom)} ${esc(r.nom)}</button>`; });
+      const libres=MATIN.filter(h=>!l.some(r=>r.heure===h)).length;
+      corps+=`<button class="chip libre2" data-goto="${d}">${libres} créneau${libres>1?'x':''} libre${libres>1?'s':''}</button>`;
+    }
+    html+=`<div class="jrow${d===auj?' auj':''}">
+      <button class="jnom" data-goto="${d}">${esc(nom)}<b>${fromIso(d).getDate()}</b>${esc(mois)}${lun[d]?`<span class="lune7">${svgLune(lun[d],17)}${lun[d]}</span>`:''}</button>
+      <div class="jcorps">${corps}</div></div>`;
+  }
+  return html+'</div>';
+}
+
+function vueGens(){
+  const gens=listeGens();
+  let html=`<input class="search" id="q" placeholder="Chercher un nom, un prénom, un numéro" value="${esc(recherche)}">`;
+  if(!gens.length){
+    html += recherche
+      ? `<div class="empty"><strong>Aucun nom ne correspond</strong>Essayez une autre orthographe.</div>`
+      : `<div class="empty"><strong>Le répertoire est vide</strong>Chaque personne notée dans un rendez-vous s'inscrit ici automatiquement.</div>`;
+    return html+`<div class="addrow"><button class="primary" data-new="1">Nouveau rendez-vous</button></div>`;
+  }
+  gens.forEach(p=>{
+    html+=`<div class="person">
+      <button class="phead" data-open="${esc(p.cle)}">
+        <span class="pname">${esc(p.prenom)} ${esc(p.nom)}</span>
+        <span class="pcount">${p.nb} séance${p.nb>1?'s':''}${p.prochain?' · prochaine le '+courtDate(p.prochain.date):p.dernier?' · dernière le '+courtDate(p.dernier.date):''}</span>
+      </button>`;
+    if(ouvert===p.cle){
+      html+='<div class="pbody">';
+      if(p.prochain) html+=`<div class="next"><b>Prochaine séance · ${esc(longDate(p.prochain.date))}, ${esc(jolie(p.prochain.heure))}</b>${p.prochain.note?`<span>${esc(p.prochain.note)}</span>`:'<span>Aucune note pour cette séance.</span>'}</div>`;
+      if(p.tel) html+=`<div class="meta">${esc(p.tel)}</div>`;
+      if(p.note) html+=`<div class="cardnote">${esc(p.note)}</div>`;
+      html+=`<p class="sectitle">Historique</p>`;
+      const h=histoDe(p.cle);
+      if(!h.length) html+=`<p class="meta">Rien d'enregistré pour le moment.</p>`;
+      else{
+        html+='<ul class="histo">';
+        h.forEach(x=>{
+          if(x.type==='form'){
+            html+=`<li><div class="histline"><time>${esc(courtDate(x.date))} · ${esc(jolie(x.heure))}</time><span>${esc(x.f.titre)}</span><span class="tag">FORMATION</span></div></li>`;
+          }else{
+            const r=x.r, o=ouvertCR===r.id, ap=r.proto||(r.cr||'').split('\n')[0]||r.note||'Séance';
+            html+=`<li>
+              <button class="histline" data-cr="${r.id}"><time>${esc(courtDate(r.date))} · ${esc(jolie(r.heure))}</time><span>${esc(ap)}</span><em>${o?'▾':'▸'}</em></button>`;
+            if(o) html+=`<div class="crbox">
+                <label>Protocole réalisé</label>${selProto(r.id, r.proto||'')}
+                <label for="cr_${r.id}">Notes</label>
+                <textarea id="cr_${r.id}" data-crsave="${r.id}" placeholder="Ce qui a été fait, ce que vous avez observé, ce qu'il faudra reprendre…">${esc(r.cr||'')}</textarea>
+                <p class="crhint">Enregistré au fil de la frappe.${r.note?' · Note du rendez-vous : '+esc(r.note):''}</p></div>`;
+            html+='</li>';
+          }
+        });
+        html+='</ul>';
+      }
+      html+=`<div class="pacts">
+        <button class="primary" data-book="${esc(p.cle)}">Reprendre rendez-vous</button>
+        <button class="ghost" data-fichetech="${esc(p.cle)}">Fiche technique</button>
+        <button class="ghost" data-fiche="${esc(p.cle)}">Modifier la fiche</button>
+        <button class="ghost" data-delp="${esc(p.cle)}">Supprimer</button>
+      </div></div>`;
+    }
+    html+='</div>';
+  });
+  return html+`<div class="addrow"><button class="ghost" data-fiche="">Ajouter une personne</button></div>`;
+}
+
+function vueNotes(){
+  let html=`<div class="notebox">
+    <textarea id="newnote" placeholder="Noter quelque chose : une idée, un rappel, un achat à faire, une observation…"></textarea>
+    <div style="display:flex;justify-content:flex-end"><button class="primary" id="addnote">Ajouter au pense-bête</button></div></div>`;
+  if(!data.notes.length) return html+`<div class="empty"><strong>Le pense-bête est vide</strong>Tout ce qui vous passe par la tête peut se poser ici.</div>`;
+  [...data.notes].sort((a,b)=>(a.fait===b.fait)?b.creee-a.creee:(a.fait?1:-1)).forEach(n=>{
+    html+=`<div class="noteitem${n.fait?' done':''}">
+      <button class="check" data-tick="${n.id}" aria-label="${n.fait?'Rouvrir':'Marquer comme fait'}">${n.fait?'✓':''}</button>
+      <div class="notetext">${esc(n.texte)}<span class="notedate">${esc(new Date(n.creee).toLocaleDateString('fr-FR',{day:'numeric',month:'long'}))} · <button class="linkbtn danger" data-delnote="${n.id}">supprimer</button></span></div></div>`;
+  });
+  return html;
+}
+
+function selProto(id,val){
+  const liste=[...data.protocoles];
+  if(val && !liste.includes(val)) liste.unshift(val);
+  return `<select data-proto="${id}"><option value="">— aucun protocole —</option>${
+    liste.map(x=>`<option${x===val?' selected':''}>${esc(x)}</option>`).join('')}</select>`;
+}
+
+function vueReglages(){
+  let html=`<p class="sectitle" style="margin-top:0">Mes protocoles</p>
+    <p class="meta" style="margin-bottom:14px">Cette liste alimente le choix proposé après chaque séance.</p>`;
+  if(!data.protocoles.length) html+=`<div class="empty"><strong>Aucun protocole</strong>Ajoutez-en un ci-dessous.</div>`;
+  else{
+    html+='<div class="protos">';
+    data.protocoles.forEach((x,i)=>{
+      html+=`<div class="proto"><span>${esc(x)}</span>
+        <button class="linkbtn" data-protoedit="${i}">Renommer</button>
+        <button class="linkbtn danger" data-protodel="${i}">Retirer</button></div>`;
+    });
+    html+='</div>';
+  }
+  html+=`<div class="field" style="margin-top:16px;max-width:420px"><label for="np">Ajouter un protocole</label>
+    <div class="inline"><input id="np" placeholder="Nom du protocole"><button class="primary" id="addproto">Ajouter</button></div></div>
+    <p class="sectitle">Horaires</p>
+    <p class="meta">Le matin est fixe. Les heures de l'après-midi se modifient en cliquant dessus dans la journée : ${data.aprem.map(h=>esc(jolie(h))).join(' · ')||'aucune'}.</p>
+    <p class="sectitle">Mes données</p>
+    <p class="meta">Tout est enregistré sur cet appareil uniquement. Pensez à faire une sauvegarde de temps en temps, en bas de page.</p>`;
+  return html;
+}
+
+function ficheTechnique(k){
+  ficheOuverte=k;
+  const p=data.gens[k], h=histoDe(k), seances=h.filter(x=>x.type==='rdv'), forms=h.filter(x=>x.type==='form');
+  const prem=seances[0], der=[...seances].reverse()[0], proch=prochainDe(k);
+  let rythme='—';
+  if(seances.length>1){
+    const d1=fromIso(seances[0].date), d2=fromIso(seances[seances.length-1].date);
+    const j=Math.round((d2-d1)/86400000/(seances.length-1));
+    rythme = j>=14 ? Math.round(j/7)+' sem.' : j+' j';
+  }
+  const bloc=(l,v)=>`<div class="repere"><span>${l}</span><b>${v}</b></div>`;
+  let html=`
+  <div class="overlay" id="ov"><div class="sheet fiche" role="dialog" aria-modal="true">
+    <div class="fichetete">
+      <div><p class="sur" style="margin:0 0 4px">Fiche technique</p><h2 style="margin:0">${esc(p.prenom)} ${esc(p.nom)}</h2>
+      ${p.tel?`<div class="meta">${esc(p.tel)}</div>`:''}</div>
+      <button class="ghost" data-close="1">Fermer</button>
+    </div>
+    <div class="field" style="margin-top:14px"><label for="fp">Profil</label>
+      <textarea id="fp" data-profilsave="${esc(k)}" placeholder="Ce qu'il faut avoir en tête">${esc(p.note||'')}</textarea></div>
+    <div class="reperes">
+      ${bloc('Séances', seances.length)}${bloc('Rythme moyen', rythme)}
+      ${bloc('Première', prem?courtDate(prem.date):'—')}${bloc('Dernière', der?courtDate(der.date):'—')}
+    </div>`;
+  if(proch) html+=`<div class="next" style="margin-top:12px"><b>Prochaine · ${esc(longDate(proch.date))}, ${esc(jolie(proch.heure))}</b>${proch.note?`<span>${esc(proch.note)}</span>`:''}</div>`;
+  html+=`<p class="sectitle">Séances</p>`;
+  if(!seances.length) html+=`<p class="meta">Aucune séance enregistrée.</p>`;
+  seances.forEach(x=>{
+    const r=x.r;
+    html+=`<div class="seance">
+      <div class="meta">${esc(longDate(r.date))} · ${esc(jolie(r.heure))}</div>
+      <div class="field" style="margin:7px 0 8px">${selProto(r.id, r.proto||'')}</div>
+      <textarea data-crsave="${r.id}" placeholder="Notes libres sur cette séance">${esc(r.cr||'')}</textarea>
+    </div>`;
+  });
+  if(forms.length){
+    html+=`<p class="sectitle" style="color:var(--fuchsia)">Formations</p>`;
+    forms.forEach(x=>html+=`<div class="formbloc" style="margin-bottom:8px"><div class="formtitre">${esc(x.f.titre)}</div><div class="meta">${esc(longDate(x.f.date))} · ${esc(jolie(x.f.debut))} – ${esc(jolie(x.f.fin))}</div></div>`);
+  }
+  html+=`<div class="sheetacts"><button class="ghost" data-close="1">Fermer</button></div></div></div>`;
+  document.getElementById('modal').innerHTML=html;
+}
+
+/* ============ calendrier ============ */
+function ouvrirCal(){ calMois=jour.slice(0,7); rendreCal(); }
+function rendreCal(){
+  const [y,m]=calMois.split('-').map(Number);
+  const nb=new Date(y,m,0).getDate(), off=(new Date(y,m-1,1).getDay()+6)%7;
+  const debut=iso(new Date(y,m-1,1)), fin=iso(new Date(y,m,nb));
+  const lu=lunes(debut,fin), auj=isoToday();
+  const titre=new Date(y,m-1,1).toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+  let cells='';
+  ['lu','ma','me','je','ve','sa','di'].forEach(d=>cells+=`<div class="caldow">${d}</div>`);
+  for(let i=0;i<off;i++) cells+='<div class="cell vide"></div>';
+  for(let n=1;n<=nb;n++){
+    const d=iso(new Date(y,m-1,n));
+    const nr=rdvDuJour(d).length, nf=formsDuJour(d).length, l=lu[d];
+    const charge = nr>=10?' charge' : nr>=5?' moyen' : nr>0?' calme' : '';
+    cells+=`<button class="cell${d===auj?' auj':''}${d===jour?' sel':''}${nf?' forma':''}${charge}" data-day="${d}" title="${nr?nr+' rendez-vous':''}">
+      <span class="n">${n}</span>
+      ${l?`<span class="lune">${svgLune(l,11)}${l}</span>`:'<span class="lune">&nbsp;</span>'}</button>`;
+  }
+  document.getElementById('modal').innerHTML=`
+  <div class="overlay" id="ov"><div class="sheet calsheet" role="dialog" aria-modal="true">
+    <p class="sur">Aller à une date</p>
+    <div class="calnav">
+      <button data-cal="-12" aria-label="Année précédente">«</button>
+      <button data-cal="-1" aria-label="Mois précédent">‹</button>
+      <div class="mois">${esc(titre)}</div>
+      <button data-cal="1" aria-label="Mois suivant">›</button>
+      <button data-cal="12" aria-label="Année suivante">»</button>
+    </div>
+    <div class="calgrid">${cells}</div>
+    <div class="callegende">
+      <span><i class="v"></i>moins de 5</span><span><i class="o"></i>5 à 9</span><span><i class="r"></i>10 et plus</span><span><i class="f"></i>formation</span>
+      <span>${svgLune('NL',11)}NL nouvelle lune</span>
+      <span>${svgLune('PL',11)}PL pleine lune</span>
+    </div>
+    <div class="sheetacts"><button class="ghost" data-close="1">Fermer</button></div>
+  </div></div>`;
+}
+
+/* ============ formulaires ============ */
+function fermer(){ document.getElementById('modal').innerHTML=''; }
+function val(id){ return document.getElementById(id).value; }
+function erreur(m){ const e=document.getElementById('err'); e.textContent=m; e.style.display='block'; }
+
+function formRdv(id,pre){
+  const r=id?data.rdv.find(x=>x.id===id):null;
+  const v=r||Object.assign({prenom:'',nom:'',tel:'',date:jour,heure:'10:00',duree:45,note:''},pre||{});
+  const fp=data.gens[cle(v.prenom||'',v.nom||'')]; v.profil=fp?(fp.note||''):'';
+  const quand = id ? '' : `<div class="duo">
+      <div class="field"><label for="f_date">Date</label><input id="f_date" type="date" value="${v.date}"></div>
+      <div class="field"><label for="f_heure">Heure</label><input id="f_heure" type="time" value="${v.heure}"></div>
+    </div>`;
+  document.getElementById('modal').innerHTML=`
+  <div class="overlay" id="ov"><div class="sheet" role="dialog" aria-modal="true">
+    <p class="sur">Séance</p><h2>${id?'Modifier le rendez-vous':'Nouveau rendez-vous'}</h2>
+    <p class="err" id="err"></p>
+    <div class="duo">
+      <div class="field"><label for="f_prenom">Prénom</label><input id="f_prenom" value="${esc(v.prenom)}"></div>
+      <div class="field"><label for="f_nom">Nom</label><input id="f_nom" value="${esc(v.nom)}"></div>
+    </div>
+    <div class="field"><label for="f_profil">Profil — à retenir sur cette personne</label><textarea id="f_profil" placeholder="Ce que vous voulez avoir sous les yeux à chaque séance">${esc(v.profil||'')}</textarea></div>
+    <div class="field"><label for="f_tel">Téléphone</label><input id="f_tel" type="tel" value="${esc(v.tel)}"></div>
+    ${quand}
+    ${id?`<p style="color:var(--gris);font-size:12.5px;margin:-4px 0 14px">${esc(longDate(v.date))} à ${esc(jolie(v.heure))} · passez par « Reporter » pour changer la date ou l'heure.</p>`:''}
+    <div class="field"><label for="f_note">Note de séance</label><textarea id="f_note">${esc(v.note)}</textarea></div>
+    <div class="sheetacts"><button class="ghost" data-close="1">Annuler</button><button class="primary" data-saverdv="${id||''}">Enregistrer</button></div>
+  </div></div>`;
+  setTimeout(()=>{ const el=document.getElementById((v.prenom&&!id)?'f_date':'f_prenom'); if(el) el.focus(); },30);
+}
+
+function formFormation(id){
+  const f=id?data.formations.find(x=>x.id===id):null;
+  const v=f||{titre:'',debut:'09:00',fin:'17:00',notes:'',parts:[]};
+  partTmp=(v.parts||[]).map(p=>({...p}));
+  const dl=Object.values(data.gens).map(p=>`<option value="${esc(p.prenom+' '+p.nom)}">`).join('');
+  document.getElementById('modal').innerHTML=`
+  <div class="overlay" id="ov"><div class="sheet" role="dialog" aria-modal="true">
+    <p class="sur">${esc(longDate(jour))}</p><h2>${id?'Modifier la formation':'Formation ou stage'}</h2>
+    <p class="err" id="err"></p>
+    <div class="field"><label for="t_titre">Intitulé</label><input id="t_titre" value="${esc(v.titre)}" placeholder="Journée de transmission"></div>
+    <div class="duo">
+      <div class="field"><label for="t_debut">Début</label><input id="t_debut" type="time" value="${v.debut}"></div>
+      <div class="field"><label for="t_fin">Fin</label><input id="t_fin" type="time" value="${v.fin}"></div>
+    </div>
+    <div class="field"><label for="t_part">Participants</label>
+      <div class="inline"><input id="t_part" list="repertoire" placeholder="Nom du participant"><button class="ghost" id="addpart">Ajouter</button></div>
+      <datalist id="repertoire">${dl}</datalist>
+      <div class="parts" id="partlist"></div>
+    </div>
+    <div class="field"><label for="t_notes">Notes</label><textarea id="t_notes">${esc(v.notes||'')}</textarea></div>
+    <div class="sheetacts"><button class="ghost" data-close="1">Annuler</button><button class="gold" data-savef="${id||''}">Enregistrer</button></div>
+  </div></div>`;
+  majParts();
+  setTimeout(()=>{ const el=document.getElementById('t_titre'); if(el) el.focus(); },30);
+}
+function majParts(){
+  const c=document.getElementById('partlist'); if(!c) return;
+  c.innerHTML=partTmp.map((p,i)=>`<div class="pchip"><span>${esc(p.nom)}</span><button data-rmpart="${i}" aria-label="Retirer">×</button></div>`).join('');
+}
+function ajouterPart(){
+  const i=document.getElementById('t_part'), nom=i.value.trim();
+  if(!nom) return;
+  const trouve=Object.values(data.gens).find(p=>cle(p.prenom,p.nom)===cle(nom,''));
+  partTmp.push({nom, cle:trouve?trouve.cle:null});
+  i.value=''; i.focus(); majParts();
+}
+
+function formFiche(k){
+  const p=k?data.gens[k]:{prenom:'',nom:'',tel:'',note:''};
+  document.getElementById('modal').innerHTML=`
+  <div class="overlay" id="ov"><div class="sheet" role="dialog" aria-modal="true">
+    <p class="sur">Répertoire</p><h2>${k?'Fiche de la personne':'Nouvelle personne'}</h2>
+    <p class="err" id="err"></p>
+    <div class="duo">
+      <div class="field"><label for="p_prenom">Prénom</label><input id="p_prenom" value="${esc(p.prenom)}"></div>
+      <div class="field"><label for="p_nom">Nom</label><input id="p_nom" value="${esc(p.nom)}"></div>
+    </div>
+    <div class="field"><label for="p_tel">Téléphone</label><input id="p_tel" type="tel" value="${esc(p.tel||'')}"></div>
+    <div class="field"><label for="p_note">À retenir</label><textarea id="p_note">${esc(p.note||'')}</textarea></div>
+    <div class="sheetacts"><button class="ghost" data-close="1">Annuler</button><button class="primary" data-savefiche="${esc(k||'')}">Enregistrer</button></div>
+  </div></div>`;
+  setTimeout(()=>{ const el=document.getElementById('p_prenom'); if(el) el.focus(); },30);
+}
+
+function formReport(id){
+  const r=data.rdv.find(x=>x.id===id);
+  document.getElementById('modal').innerHTML=`
+  <div class="overlay" id="ov"><div class="sheet" role="dialog" aria-modal="true" style="max-width:400px">
+    <p class="sur">${esc(r.prenom)} ${esc(r.nom)}</p><h2>Reporter le rendez-vous</h2>
+    <p class="err" id="err"></p>
+    <p style="color:var(--gris);font-size:13.5px;margin:8px 0 14px">Actuellement le ${esc(longDate(r.date))} à ${esc(jolie(r.heure))}. Le créneau se libère.</p>
+    <div class="duo">
+      <div class="field"><label for="r_date">Nouvelle date</label><input id="r_date" type="date" value="${r.date}"></div>
+      <div class="field"><label for="r_heure">Nouvelle heure</label><input id="r_heure" type="time" value="${r.heure}"></div>
+    </div>
+    <div class="sheetacts"><button class="ghost" data-close="1">Annuler</button><button class="primary" data-savereport="${id}">Reporter</button></div>
+  </div></div>`;
+}
+
+function formOuvert(k){
+  const [d,h]=k.split('|'), o=data.ouverts[k]||{texte:'',fait:false};
+  document.getElementById('modal').innerHTML=`
+  <div class="overlay" id="ov"><div class="sheet" role="dialog" aria-modal="true" style="max-width:400px">
+    <p class="sur">${esc(longDate(d))} · ${esc(jolie(h))}</p><h2>Temps ouvert</h2>
+    <p class="err" id="err"></p>
+    <div class="field"><label for="o_texte">Note libre</label><textarea id="o_texte" placeholder="Ce que vous voulez poser sur ce temps">${esc(o.texte)}</textarea></div>
+    <p style="color:var(--gris);font-size:12.5px;margin:0">Cette note ne vaut que pour ce jour et cette heure.</p>
+    <div class="sheetacts">
+      ${data.ouverts[k]?`<button class="linkbtn danger" data-delo="${k}">Effacer</button>`:''}
+      <button class="ghost" data-close="1">Annuler</button>
+      <button class="primary" data-saveo="${k}">Enregistrer</button>
+    </div>
+  </div></div>`;
+  setTimeout(()=>{ const el=document.getElementById('o_texte'); if(el) el.focus(); },30);
+}
+
+function formHoraire(h){
+  document.getElementById('modal').innerHTML=`
+  <div class="overlay" id="ov"><div class="sheet" role="dialog" aria-modal="true" style="max-width:380px">
+    <p class="sur">Horaires de l'après-midi</p><h2>Modifier ${esc(jolie(h))}</h2>
+    <p class="err" id="err"></p>
+    <p style="color:var(--gris);font-size:13.5px;margin:0 0 14px">Ce créneau change pour tous les jours, du lundi au samedi.</p>
+    <div class="field"><label for="h_new">Nouvel horaire</label><input id="h_new" type="time" value="${h}"></div>
+    <div class="sheetacts">
+      <button class="linkbtn danger" data-hdel="${h}">Retirer ce créneau</button>
+      <button class="ghost" data-close="1">Annuler</button>
+      <button class="primary" data-hsave="${h}">Enregistrer</button>
+    </div>
+  </div></div>`;
+}
+
+function demander(texte,action){
+  document.getElementById('modal').innerHTML=`
+  <div class="overlay" id="ov"><div class="sheet" role="dialog" aria-modal="true" style="max-width:390px">
+    <h2>Confirmer</h2><p style="margin:8px 0 0">${esc(texte)}</p>
+    <div class="sheetacts"><button class="ghost" data-close="1">Annuler</button><button class="primary" id="oui">Supprimer</button></div>
+  </div></div>`;
+  document.getElementById('oui').onclick=()=>{ action(); fermer(); sauver(); rendre(); };
+}
+
+/* ============ enregistrements ============ */
+function enregistrerRdv(id){
+  const prenom=val('f_prenom').trim(), nom=val('f_nom').trim();
+  const anc=id?data.rdv.find(x=>x.id===id):null;
+  const date=anc?anc.date:val('f_date'), heure=anc?anc.heure:val('f_heure');
+  if(!prenom&&!nom) return erreur('Indiquez au moins un prénom ou un nom.');
+  if(!date||!heure) return erreur('La date et l\'heure sont nécessaires.');
+  if(estDimanche(date)) return erreur('Le dimanche est réservé aux formations et aux stages.');
+  const k=cle(prenom,nom);
+  const obj={id:id||uid(), cle:k, prenom, nom, tel:val('f_tel').trim(), date, heure, duree:(anc&&anc.duree)||45, note:val('f_note').trim(), cr:(anc&&anc.cr)||'', fait:(anc&&anc.fait)||false};
+  if(id){ data.rdv[data.rdv.findIndex(x=>x.id===id)]=obj; } else data.rdv.push(obj);
+  const f=data.gens[k]||{};
+  data.gens[k]={cle:k, prenom, nom, tel:obj.tel||f.tel||'', note:val('f_profil').trim()};
+  if(onglet==='jour') jour=date;
+  fermer(); sauver(); rendre();
+}
+function enregistrerFormation(id){
+  const titre=val('t_titre').trim(), debut=val('t_debut'), fin=val('t_fin');
+  if(!titre) return erreur('Donnez un intitulé à cette formation.');
+  if(!debut||!fin) return erreur('Indiquez les heures de début et de fin.');
+  const obj={id:id||uid(), date:jour, titre, debut, fin, notes:val('t_notes').trim(), parts:partTmp.map(p=>({...p}))};
+  if(id){ data.formations[data.formations.findIndex(x=>x.id===id)]=obj; } else data.formations.push(obj);
+  fermer(); sauver(); rendre();
+}
+function enregistrerFiche(k){
+  const prenom=val('p_prenom').trim(), nom=val('p_nom').trim();
+  if(!prenom&&!nom) return erreur('Indiquez au moins un prénom ou un nom.');
+  const nk=cle(prenom,nom);
+  if(k&&k!==nk) delete data.gens[k];
+  data.gens[nk]={cle:nk, prenom, nom, tel:val('p_tel').trim(), note:val('p_note').trim()};
+  data.rdv.forEach(r=>{ if(r.cle===k||r.cle===nk){ r.cle=nk; r.prenom=prenom; r.nom=nom; } });
+  ouvert=nk; onglet='gens';
+  fermer(); sauver(); rendre();
+}
+
+/* ============ événements ============ */
+document.addEventListener('click', e=>{
+  const t=e.target.closest('button'); if(!t) return; const d=t.dataset;
+
+  if(t.classList.contains('tab')){ onglet=d.tab; rendre(); return; }
+  if(d.vue){ vue=d.vue; rendre(); return; }
+  if(t.id==='prev'){ jour=decale(jour, vue==='semaine'?-7:-1); rendre(); return; }
+  if(t.id==='next'){ jour=decale(jour, vue==='semaine'?7:1); rendre(); return; }
+  if(t.id==='today'){ jour=isoToday(); rendre(); return; }
+  if(t.id==='pickbtn'||t.id==='calbtn'){ ouvrirCal(); return; }
+  if(d.cal){ const [y,m]=calMois.split('-').map(Number); const nd=new Date(y,m-1+Number(d.cal),1); calMois=iso(nd).slice(0,7); rendreCal(); return; }
+  if(d.day){ jour=d.day; vue='jour'; onglet='jour'; fermer(); rendre(); return; }
+  if(d.goto){ jour=d.goto; vue='jour'; rendre(); return; }
+  if(d.gotof){ jour=d.gotof; vue='jour'; rendre(); formFormation(null); return; }
+  if(d.slot){ const [dt,h]=d.slot.split('|'); formRdv(null,{date:dt,heure:h}); return; }
+
+  if(d.new!==undefined){ formRdv(null); return; }
+  if(d.newf!==undefined){ formFormation(null); return; }
+  if(d.edit){ formRdv(d.edit); return; }
+  if(d.editf){ const f=data.formations.find(x=>x.id===d.editf); jour=f.date; formFormation(d.editf); return; }
+  if(d.fait){ const r=data.rdv.find(x=>x.id===d.fait); r.fait=!r.fait; sauver(); rendre(); return; }
+  if(d.faito){ const o=data.ouverts[d.faito]; if(o){ o.fait=!o.fait; sauver(); rendre(); } return; }
+  if(d.ouvrir){ formOuvert(d.ouvrir); return; }
+  if(d.edito){ formOuvert(d.edito); return; }
+  if(d.delo){ delete data.ouverts[d.delo]; fermer(); sauver(); rendre(); return; }
+  if(d.saveo){
+    const txt=val('o_texte').trim();
+    if(!txt) delete data.ouverts[d.saveo];
+    else data.ouverts[d.saveo]={texte:txt, fait:(data.ouverts[d.saveo]||{}).fait||false};
+    fermer(); sauver(); rendre(); return;
+  }
+  if(d.report){ formReport(d.report); return; }
+  if(d.savereport){
+    const r=data.rdv.find(x=>x.id===d.savereport), nd=val('r_date'), nh=val('r_heure');
+    if(!nd||!nh) return erreur('Indiquez une date et une heure.');
+    if(estDimanche(nd)) return erreur('Le dimanche est réservé aux formations et aux stages.');
+    r.date=nd; r.heure=nh; jour=nd;
+    fermer(); sauver(); rendre(); return;
+  }
+  if(d.del){ demander('Supprimer ce rendez-vous ?', ()=>{ data.rdv=data.rdv.filter(x=>x.id!==d.del); }); return; }
+  if(d.delf){ demander('Supprimer cette formation ?', ()=>{ data.formations=data.formations.filter(x=>x.id!==d.delf); }); return; }
+  if(d.saverdv!==undefined){ enregistrerRdv(d.saverdv||null); return; }
+  if(d.savef!==undefined){ enregistrerFormation(d.savef||null); return; }
+  if(d.savefiche!==undefined){ enregistrerFiche(d.savefiche||null); return; }
+  if(t.id==='addpart'){ ajouterPart(); return; }
+  if(d.rmpart!==undefined){ partTmp.splice(Number(d.rmpart),1); majParts(); return; }
+  if(d.close){ ficheOuverte=null; fermer(); rendre(); return; }
+
+  if(d.hedit){ formHoraire(d.hedit); return; }
+  if(d.hsave){
+    const nv=val('h_new'); if(!nv) return erreur('Choisissez un horaire.');
+    if(data.aprem.includes(nv)&&nv!==d.hsave) return erreur('Cet horaire existe déjà.');
+    data.aprem=data.aprem.map(x=>x===d.hsave?nv:x).sort((a,b)=>minutes(a)-minutes(b));
+    fermer(); sauver(); rendre(); return;
+  }
+  if(d.hdel){ data.aprem=data.aprem.filter(x=>x!==d.hdel); fermer(); sauver(); rendre(); return; }
+
+  if(d.fichetech!==undefined){ ficheTechnique(d.fichetech); return; }
+  if(t.id==='addproto'){
+    const i=document.getElementById('np'), v=i.value.trim();
+    if(!v) return;
+    if(!data.protocoles.includes(v)) data.protocoles.push(v);
+    sauver(); rendre(); return;
+  }
+  if(d.protodel!==undefined){
+    const n=data.protocoles[Number(d.protodel)];
+    demander(`Retirer « ${n} » de la liste ? Les séances déjà notées le gardent.`, ()=>{ data.protocoles.splice(Number(d.protodel),1); });
+    return;
+  }
+  if(d.protoedit!==undefined){
+    const i=Number(d.protoedit), anc=data.protocoles[i];
+    document.getElementById('modal').innerHTML=`
+    <div class="overlay" id="ov"><div class="sheet" role="dialog" aria-modal="true" style="max-width:400px">
+      <p class="sur">Protocole</p><h2>Renommer</h2><p class="err" id="err"></p>
+      <div class="field"><label for="pr">Nom</label><input id="pr" value="${esc(anc)}"></div>
+      <div class="sheetacts"><button class="ghost" data-close="1">Annuler</button><button class="primary" data-protosave="${i}">Enregistrer</button></div>
+    </div></div>`;
+    return;
+  }
+  if(d.protosave!==undefined){
+    const i=Number(d.protosave), nv=val('pr').trim(), anc=data.protocoles[i];
+    if(!nv) return erreur('Indiquez un nom.');
+    data.protocoles[i]=nv;
+    data.rdv.forEach(r=>{ if(r.proto===anc) r.proto=nv; });
+    fermer(); sauver(); rendre(); return;
+  }
+  if(d.open!==undefined){ ouvert=ouvert===d.open?null:d.open; ouvertCR=null; rendre(); return; }
+  if(d.cr){ ouvertCR=ouvertCR===d.cr?null:d.cr; rendre();
+    if(ouvertCR){ const el=document.getElementById('cr_'+ouvertCR); if(el){ el.focus(); el.setSelectionRange(el.value.length,el.value.length); } } return; }
+  if(d.book!==undefined){ const p=data.gens[d.book]; formRdv(null,{prenom:p.prenom,nom:p.nom,tel:p.tel,date:jour}); return; }
+  if(d.fiche!==undefined){ formFiche(d.fiche||null); return; }
+  if(d.delp!==undefined){
+    const p=data.gens[d.delp], n=rdvDe(d.delp).length;
+    demander(`Supprimer ${p.prenom} ${p.nom} et ses ${n} rendez-vous ?`, ()=>{
+      delete data.gens[d.delp]; data.rdv=data.rdv.filter(r=>r.cle!==d.delp); ouvert=null; ouvertCR=null; });
+    return;
+  }
+
+  if(t.id==='addnote'){
+    const ta=document.getElementById('newnote'), txt=ta.value.trim(); if(!txt) return;
+    data.notes.push({id:uid(), texte:txt, fait:false, creee:Date.now()}); sauver(); rendre(); return;
+  }
+  if(d.tick){ const n=data.notes.find(x=>x.id===d.tick); n.fait=!n.fait; sauver(); rendre(); return; }
+  if(d.delnote){ data.notes=data.notes.filter(x=>x.id!==d.delnote); sauver(); rendre(); return; }
+
+  if(t.id==='export'){
+    const b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='mon-cabinet-'+isoToday()+'.json'; a.click(); return;
+  }
+  if(t.id==='importbtn'){ document.getElementById('importfile').click(); return; }
+});
+
+document.addEventListener('input', e=>{
+  if(e.target.id==='q'){ recherche=e.target.value; const p=e.target.selectionStart; rendre();
+    const f=document.getElementById('q'); if(f){ f.focus(); f.setSelectionRange(p,p); } }
+  if(e.target.dataset&&e.target.dataset.crsave){
+    const r=data.rdv.find(x=>x.id===e.target.dataset.crsave); if(r){ r.cr=e.target.value; sauver(); } }
+  if(e.target.dataset&&e.target.dataset.profilsave){
+    const p=data.gens[e.target.dataset.profilsave]; if(p){ p.note=e.target.value; sauver(); } }
+});
+document.addEventListener('change', e=>{
+  if(e.target.dataset&&e.target.dataset.proto){
+    const r=data.rdv.find(x=>x.id===e.target.dataset.proto);
+    if(r){ r.proto=e.target.value; sauver(); if(ficheOuverte) ficheTechnique(ficheOuverte); else rendre(); }
+    return;
+  }
+  if(e.target.id==='importfile'){
+    const f=e.target.files[0]; if(!f) return;
+    const rd=new FileReader();
+    rd.onload=()=>{ try{ const p=JSON.parse(rd.result);
+      data={rdv:p.rdv||[], gens:p.gens||{}, notes:p.notes||[], formations:p.formations||[], ouverts:p.ouverts||{}, aprem:(p.aprem&&p.aprem.length)?p.aprem:[...APREM_DEFAUT], protocoles:p.protocoles||[...PROTO_DEFAUT]};
+      sauver(); rendre();
+    }catch(err){ alert('Ce fichier n\'est pas une sauvegarde de Mon Cabinet.'); } };
+    rd.readAsText(f);
+  }
+});
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape') fermer();
+  if(e.key==='Enter'&&e.target.id==='t_part'){ e.preventDefault(); ajouterPart(); }
+  if(e.key==='Enter'&&e.target.id==='np'){ e.preventDefault(); document.getElementById('addproto').click(); }
+});
+document.addEventListener('click', e=>{ if(e.target.id==='ov'){ ficheOuverte=null; fermer(); rendre(); } });
+
+/* glisser du doigt pour changer de jour ou de semaine */
+let tx=0, ty=0, tt=0;
+document.addEventListener('touchstart', e=>{
+  if(document.getElementById('modal').innerHTML) return;
+  const t=e.changedTouches[0]; tx=t.clientX; ty=t.clientY; tt=Date.now();
+},{passive:true});
+document.addEventListener('touchend', e=>{
+  if(onglet!=='jour' || document.getElementById('modal').innerHTML) return;
+  if(e.target.closest('textarea,input,select')) return;
+  const t=e.changedTouches[0], dx=t.clientX-tx, dy=t.clientY-ty;
+  if(Date.now()-tt>700) return;
+  if(Math.abs(dx)<60 || Math.abs(dy)>Math.abs(dx)*0.8) return;
+  jour = decale(jour, (dx<0?1:-1) * (vue==='semaine'?7:1));
+  rendre();
+},{passive:true});
+
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+charger();
+</script>
+</body>
+</html>
