@@ -105,6 +105,10 @@ h1,h2,.serif{font-family:var(--serif);font-weight:400;letter-spacing:.005em}
 .pchip::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--fuchsia);flex:none;opacity:.6}
 .pchip span{flex:1;min-width:0}
 .pchip button{border:0;background:none;padding:0 4px;color:var(--gris);font-size:15px;line-height:1}
+.pchip .pnom{flex:1;min-width:0;text-align:left;font-size:13.5px;color:var(--encre);padding:0}
+.pchip .pnom:hover{color:var(--fuchsia);text-decoration:underline;text-underline-offset:3px}
+.pchip input{flex:1;min-width:0;border:1px solid var(--fuchsia-clair);border-radius:8px;padding:5px 9px;background:#fff;font-size:13.5px}
+.pchip input:focus{outline:2px solid var(--fuchsia);outline-offset:-1px;border-color:transparent}
 .pchip button:hover{color:var(--fuchsia)}
 .partscount{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fuchsia);margin:14px 0 0}
 .chip.forma{background:var(--fuchsia-fond);border:1px solid var(--fuchsia-clair);color:var(--fuchsia)}
@@ -476,6 +480,7 @@ function blocRdv(r){
       </div>
     </div>
     <div class="cardacts">
+      <button class="linkbtn" data-edit="${r.id}">Modifier</button>
       <button class="linkbtn" data-report="${r.id}">Reporter</button>
       <button class="linkbtn danger" data-del="${r.id}">Supprimer</button>
     </div></div>`;
@@ -827,7 +832,7 @@ function formFormation(id){
   const f=id?data.formations.find(x=>x.id===id):null;
   const v=f||{titre:'',date:jour,fin:jour,debut:'09:00',finH:'17:00',notes:'',parts:[]};
   if(f){ v.finH=f.finH||f.fin2||'17:00'; v.fin=f.fin||f.date; }
-  partTmp=(v.parts||[]).map(p=>({...p}));
+  partTmp=(v.parts||[]).map(p=>({...p})); partEdit=null;
   const dl=Object.values(data.gens).map(p=>`<option value="${esc(p.prenom+' '+p.nom)}">`).join('');
   document.getElementById('modal').innerHTML=`
   <div class="overlay" id="ov"><div class="sheet" role="dialog" aria-modal="true">
@@ -853,9 +858,23 @@ function formFormation(id){
   majParts();
   setTimeout(()=>{ const el=document.getElementById('t_titre'); if(el) el.focus(); },30);
 }
+let partEdit=null;
 function majParts(){
   const c=document.getElementById('partlist'); if(!c) return;
-  c.innerHTML=partTmp.map((p,i)=>`<div class="pchip"><span>${esc(p.nom)}</span><button data-rmpart="${i}" aria-label="Retirer">×</button></div>`).join('');
+  c.innerHTML=partTmp.map((p,i)=> i===partEdit
+    ? `<div class="pchip"><input id="pedit" value="${esc(p.nom)}"><button data-savepart="${i}" aria-label="Valider">✓</button></div>`
+    : `<div class="pchip"><button class="pnom" data-editpart="${i}">${esc(p.nom)}</button><button data-rmpart="${i}" aria-label="Retirer">×</button></div>`
+  ).join('');
+  if(partEdit!==null){ const e=document.getElementById('pedit'); if(e){ e.focus(); e.setSelectionRange(e.value.length,e.value.length); } }
+}
+function validerPart(i){
+  const e=document.getElementById('pedit'); if(!e) return;
+  const nom=e.value.trim();
+  if(nom){
+    const t=Object.values(data.gens).find(x=>cle(x.prenom,x.nom)===cle(nom,''));
+    partTmp[i]={nom, cle:t?t.cle:null};
+  }
+  partEdit=null; majParts();
 }
 function ajouterPart(){
   const i=document.getElementById('t_part'), nom=i.value.trim();
@@ -1034,7 +1053,9 @@ document.addEventListener('click', e=>{
   if(d.savef!==undefined){ enregistrerFormation(d.savef||null); return; }
   if(d.savefiche!==undefined){ enregistrerFiche(d.savefiche||null); return; }
   if(t.id==='addpart'){ ajouterPart(); return; }
-  if(d.rmpart!==undefined){ partTmp.splice(Number(d.rmpart),1); majParts(); return; }
+  if(d.rmpart!==undefined){ partTmp.splice(Number(d.rmpart),1); if(partEdit!==null) partEdit=null; majParts(); return; }
+  if(d.editpart!==undefined){ partEdit=Number(d.editpart); majParts(); return; }
+  if(d.savepart!==undefined){ validerPart(Number(d.savepart)); return; }
   if(d.close){ ficheOuverte=null; fermer(); rendre(); return; }
 
   if(d.hedit){ formHoraire(d.hedit); return; }
@@ -1129,6 +1150,7 @@ document.addEventListener('change', e=>{
 document.addEventListener('keydown', e=>{
   if(e.key==='Escape') fermer();
   if(e.key==='Enter'&&e.target.id==='t_part'){ e.preventDefault(); ajouterPart(); }
+  if(e.key==='Enter'&&e.target.id==='pedit'){ e.preventDefault(); if(partEdit!==null) validerPart(partEdit); }
   if(e.key==='Enter'&&e.target.id==='np'){ e.preventDefault(); document.getElementById('addproto').click(); }
 });
 document.addEventListener('click', e=>{ if(e.target.id==='ov'){ ficheOuverte=null; fermer(); rendre(); } });
