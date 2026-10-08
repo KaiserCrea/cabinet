@@ -732,8 +732,10 @@ function fermer(){
 window.addEventListener('popstate', ()=>{
   if(retourAuto){ retourAuto=false; return; }
   const m=document.getElementById('modal');
-  if(m.innerHTML){ m.innerHTML=''; ficheOuverte=null; if(pile>0) pile--; rendre(); pousser(); return; }
-  if(onglet!=='jour'){ onglet='jour'; rendre(); pousser(); return; }
+  if(m.innerHTML){ m.innerHTML=''; ficheOuverte=null; rendre(); }
+  else if(onglet!=='jour'){ onglet='jour'; rendre(); }
+  if(pile>0) pile--;
+  pousser();   // on remet toujours une marque : la touche retour ne quitte jamais l'agenda
 });
 function val(id){ return document.getElementById(id).value; }
 function erreur(m){ const e=document.getElementById('err'); e.textContent=m; e.style.display='block'; }
