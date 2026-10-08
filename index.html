@@ -240,6 +240,20 @@ h1,h2,.serif{font-family:var(--serif);font-weight:400;letter-spacing:.005em}
 .cell.sel{box-shadow:inset 0 0 0 2px var(--or-clair)}
 .cell .lune{font-size:8px;font-weight:600;letter-spacing:0;color:var(--or);display:flex;align-items:center;gap:2px;line-height:1;max-width:100%}
 .cell .lune svg{display:block}
+.calsheet.an{max-width:600px}
+.annee{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:9px}
+.mini{border:1px solid var(--ligne);border-radius:10px;padding:7px 7px 8px}
+.mini h4{font-family:var(--serif);font-weight:400;font-size:13.5px;text-align:center;margin:0 0 6px;color:var(--or)}
+.mini h4 button{border:0;background:none;padding:0;font:inherit;color:inherit}
+.mini h4 button:hover{text-decoration:underline;text-underline-offset:3px}
+.minigrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:1.5px}
+.mc{aspect-ratio:1;min-width:0;font-size:8.5px;line-height:1;display:grid;place-items:center;border:0;border-radius:3px;background:none;color:var(--gris);padding:0}
+.mc.vide{visibility:hidden}
+.mc.calme{background:#39FF6A;color:#08331A;font-weight:700}
+.mc.moyen{background:#FF9F1A;color:#fff;font-weight:700}
+.mc.charge{background:#FF2D55;color:#fff;font-weight:700}
+.mc.forma{background:#FF29C3;color:#fff;font-weight:700}
+.mc.auj{box-shadow:inset 0 0 0 1.5px var(--nuit)}
 .callegende{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;font-size:11.5px;color:var(--gris)}
 .callegende span{display:flex;align-items:center;gap:5px}
 .callegende i{width:11px;height:11px;border-radius:4px;display:block;border:1px solid}
@@ -682,7 +696,41 @@ function ficheTechnique(k){
 }
 
 /* ============ calendrier ============ */
-function ouvrirCal(){ pousser(); calMois=jour.slice(0,7); rendreCal(); }
+let calVue='mois';
+function ouvrirCal(){ pousser(); calVue='mois'; calMois=jour.slice(0,7); rendreCal(); }
+
+function rendreCalAnnee(){
+  const an=Number(calMois.slice(0,4)), auj=isoToday();
+  let mois='';
+  for(let m=1;m<=12;m++){
+    const nb=new Date(an,m,0).getDate(), off=(new Date(an,m-1,1).getDay()+6)%7;
+    const nom=new Date(an,m-1,1).toLocaleDateString('fr-FR',{month:'long'});
+    let c='';
+    for(let i=0;i<off;i++) c+='<span class="mc vide"></span>';
+    for(let n=1;n<=nb;n++){
+      const d=iso(new Date(an,m-1,n));
+      const nr=rdvDuJour(d).length, nf=formsDuJour(d).length;
+      const cl = nf?' forma' : nr>=10?' charge' : nr>=5?' moyen' : nr>0?' calme' : '';
+      c+=`<button class="mc${cl}${d===auj?' auj':''}" data-day="${d}" title="${nr?nr+' rendez-vous':''}">${n}</button>`;
+    }
+    mois+=`<div class="mini"><h4><button data-calmois="${an}-${String(m).padStart(2,'0')}">${esc(nom)}</button></h4>
+      <div class="minigrid">${c}</div></div>`;
+  }
+  document.getElementById('modal').innerHTML=`
+  <div class="overlay" id="ov"><div class="sheet calsheet an" role="dialog" aria-modal="true">
+    <p class="sur">Aller à une date</p>
+    <div class="calnav">
+      <button data-calan="-1" aria-label="Année précédente">‹</button>
+      <div class="mois"><button data-calvue="mois" style="border:0;background:none;font:inherit;color:inherit;padding:0">${an}</button></div>
+      <button data-calan="1" aria-label="Année suivante">›</button>
+    </div>
+    <div class="annee">${mois}</div>
+    <div class="callegende">
+      <span><i class="v"></i>moins de 5</span><span><i class="o"></i>5 à 9</span><span><i class="r"></i>10 et plus</span><span><i class="f"></i>formation</span>
+    </div>
+    <div class="sheetacts"><button class="ghost" data-close="1">Fermer</button></div>
+  </div></div>`;
+}
 function rendreCal(){
   const [y,m]=calMois.split('-').map(Number);
   const nb=new Date(y,m,0).getDate(), off=(new Date(y,m-1,1).getDay()+6)%7;
@@ -706,7 +754,7 @@ function rendreCal(){
     <div class="calnav">
       <button data-cal="-12" aria-label="Année précédente">«</button>
       <button data-cal="-1" aria-label="Mois précédent">‹</button>
-      <div class="mois">${esc(titre)}</div>
+      <div class="mois"><button data-calvue="annee" style="border:0;background:none;font:inherit;color:inherit;padding:0">${esc(titre)}</button></div>
       <button data-cal="1" aria-label="Mois suivant">›</button>
       <button data-cal="12" aria-label="Année suivante">»</button>
     </div>
@@ -948,6 +996,9 @@ document.addEventListener('click', e=>{
   if(t.id==='today'){ jour=isoToday(); rendre(); return; }
   if(t.id==='pickbtn'||t.id==='calbtn'){ ouvrirCal(); return; }
   if(d.cal){ const [y,m]=calMois.split('-').map(Number); const nd=new Date(y,m-1+Number(d.cal),1); calMois=iso(nd).slice(0,7); rendreCal(); return; }
+  if(d.calvue){ calVue=d.calvue; calVue==='annee'?rendreCalAnnee():rendreCal(); return; }
+  if(d.calan){ const an=Number(calMois.slice(0,4))+Number(d.calan); calMois=an+calMois.slice(4); rendreCalAnnee(); return; }
+  if(d.calmois){ calMois=d.calmois; calVue='mois'; rendreCal(); return; }
   if(d.day){ jour=d.day; vue='jour'; onglet='jour'; fermer(); rendre(); return; }
   if(d.goto){ jour=d.goto; vue='jour'; rendre(); return; }
   if(d.gotof){ jour=d.gotof; vue='jour'; rendre(); formFormation(null); return; }
