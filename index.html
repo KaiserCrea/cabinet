@@ -286,7 +286,7 @@ footer span{color:var(--gris);font-size:12.5px}
 <script>
 /* ============ constantes ============ */
 const KEY = 'mon-cabinet-v1';
-const MATIN = ['05:30','06:15','07:00','07:45','08:30','09:15','10:00','10:45','11:30','12:15','13:00','13:45','14:30'];
+const MATIN = ['04:45','05:30','06:15','07:00','07:45','08:30','09:15','10:00','10:45','11:30','12:15','13:00','13:45','14:30'];
 const APREM_DEFAUT = ['16:00','17:00','18:00','19:00'];
 const PROTO_DEFAUT = ['Scanner','Soins énergétiques',"Loi d'attraction",'Régression','Soins occultes','Contact médiumnique','Mémoire transgénérationnelle','Voyance','Développement des perceptions'];
 
@@ -370,7 +370,8 @@ function sauver(){
 /* ============ sélecteurs ============ */
 function grilleDu(){ return [...MATIN, ...data.aprem].sort((a,b)=>minutes(a)-minutes(b)); }
 function rdvDuJour(d){ return data.rdv.filter(r=>r.date===d).sort((a,b)=>a.heure.localeCompare(b.heure)); }
-function formsDuJour(d){ return data.formations.filter(f=>f.date===d).sort((a,b)=>a.debut.localeCompare(b.debut)); }
+function formsDuJour(d){ return data.formations.filter(f=>f.date<=d && (f.fin||f.date)>=d).sort((a,b)=>a.debut.localeCompare(b.debut)); }
+function enFormation(d){ return formsDuJour(d).length>0; }
 function rdvDe(k){ return data.rdv.filter(r=>r.cle===k); }
 function formsDe(k){ return data.formations.filter(f=>(f.parts||[]).some(p=>p.cle===k)); }
 function histoDe(k){
@@ -480,13 +481,14 @@ function blocOuvert(k){
 }
 
 function vueJour(){
-  if(estDimanche(jour)){
+  const enForm=enFormation(jour);
+  if(enForm || estDimanche(jour)){
     const fs=formsDuJour(jour);
     let html = fs.length ? '' : `<div class="empty"><strong>Dimanche</strong>Pas de rendez-vous ce jour. C'est la journée des formations et des stages.</div>`;
     fs.forEach(f=>{
       html += `<div class="formbloc">
         <div class="formtitre">${esc(f.titre)}</div>
-        <div class="meta">${esc(jolie(f.debut))} – ${esc(jolie(f.fin))}</div>
+        <div class="meta">${f.fin&&f.fin!==f.date?esc(longDate(f.date))+' → '+esc(longDate(f.fin)):esc(longDate(f.date))} · ${esc(jolie(f.debut))} – ${esc(jolie(f.finH||f.fin))}</div>
         ${(f.parts||[]).length?`<p class="partscount">${f.parts.length} participant${f.parts.length>1?'s':''}</p>
           <div class="parts">${f.parts.map(p=>`<div class="pchip"><span>${esc(p.nom)}</span></div>`).join('')}</div>`:''}
         ${f.notes?`<div class="cardnote">${esc(f.notes)}</div>`:''}
@@ -513,7 +515,7 @@ function vueJour(){
       <div>${rs.length ? rs.map(blocRdv).join('') : vide}</div>
     </div>`;
   });
-  return html+'</div><div class="addrow"><button class="primary" data-new="1">Nouveau rendez-vous</button></div>';
+  return html+'</div><div class="addrow"><button class="primary" data-new="1">Nouveau rendez-vous</button><button class="gold" data-newf="1">Ajouter une formation</button></div>';
 }
 
 function vueSemaine(){
@@ -524,9 +526,9 @@ function vueSemaine(){
     const nom=fromIso(d).toLocaleDateString('fr-FR',{weekday:'short'}).replace('.','');
     const mois=fromIso(d).toLocaleDateString('fr-FR',{month:'short'}).replace('.','');
     let corps='';
-    if(estDimanche(d)){
+    if(fs.length || estDimanche(d)){
       fs.forEach(f=>{ corps+=`<button class="chip forma" data-editf="${f.id}">${esc(jolie(f.debut))} · ${esc(f.titre)}</button>`; });
-      corps+=`<button class="chip libre2" data-gotof="${d}">${fs.length?'ajouter une formation':'formation ou stage'}</button>`;
+      if(!fs.length) corps+=`<button class="chip libre2" data-gotof="${d}">formation ou stage</button>`;
     }else{
       l.forEach(r=>{ corps+=`<button class="chip occ${r.fait?' fait':''}" data-edit="${r.id}"><b>${esc(jolie(r.heure))}</b> · ${esc(r.prenom)} ${esc(r.nom)}</button>`; });
       const libres=MATIN.filter(h=>!l.some(r=>r.heure===h)).length;
@@ -636,6 +638,7 @@ function vueReglages(){
 }
 
 function ficheTechnique(k){
+  if(ficheOuverte!==k) pousser();
   ficheOuverte=k;
   const p=data.gens[k], h=histoDe(k), seances=h.filter(x=>x.type==='rdv'), forms=h.filter(x=>x.type==='form');
   const prem=seances[0], der=[...seances].reverse()[0], proch=prochainDe(k);
@@ -672,14 +675,14 @@ function ficheTechnique(k){
   });
   if(forms.length){
     html+=`<p class="sectitle" style="color:var(--fuchsia)">Formations</p>`;
-    forms.forEach(x=>html+=`<div class="formbloc" style="margin-bottom:8px"><div class="formtitre">${esc(x.f.titre)}</div><div class="meta">${esc(longDate(x.f.date))} · ${esc(jolie(x.f.debut))} – ${esc(jolie(x.f.fin))}</div></div>`);
+    forms.forEach(x=>html+=`<div class="formbloc" style="margin-bottom:8px"><div class="formtitre">${esc(x.f.titre)}</div><div class="meta">${x.f.fin&&x.f.fin!==x.f.date?esc(courtDate(x.f.date))+' → '+esc(courtDate(x.f.fin)):esc(longDate(x.f.date))} · ${esc(jolie(x.f.debut))} – ${esc(jolie(x.f.finH||x.f.fin))}</div></div>`);
   }
   html+=`<div class="sheetacts"><button class="ghost" data-close="1">Fermer</button></div></div></div>`;
   document.getElementById('modal').innerHTML=html;
 }
 
 /* ============ calendrier ============ */
-function ouvrirCal(){ calMois=jour.slice(0,7); rendreCal(); }
+function ouvrirCal(){ pousser(); calMois=jour.slice(0,7); rendreCal(); }
 function rendreCal(){
   const [y,m]=calMois.split('-').map(Number);
   const nb=new Date(y,m,0).getDate(), off=(new Date(y,m-1,1).getDay()+6)%7;
@@ -718,18 +721,39 @@ function rendreCal(){
 }
 
 /* ============ formulaires ============ */
-function fermer(){ document.getElementById('modal').innerHTML=''; }
+let pile=0, retourAuto=false;
+function pousser(){ pile++; try{ history.pushState({c:pile},''); }catch(e){} }
+function fermer(){
+  const m=document.getElementById('modal');
+  if(!m.innerHTML) return;
+  m.innerHTML=''; ficheOuverte=null;
+  if(pile>0){ pile--; retourAuto=true; try{ history.back(); }catch(e){} }
+}
+window.addEventListener('popstate', ()=>{
+  if(retourAuto){ retourAuto=false; return; }
+  const m=document.getElementById('modal');
+  if(m.innerHTML){ m.innerHTML=''; ficheOuverte=null; if(pile>0) pile--; rendre(); pousser(); return; }
+  if(onglet!=='jour'){ onglet='jour'; rendre(); pousser(); return; }
+});
 function val(id){ return document.getElementById(id).value; }
 function erreur(m){ const e=document.getElementById('err'); e.textContent=m; e.style.display='block'; }
 
 function formRdv(id,pre){
+  pousser();
   const r=id?data.rdv.find(x=>x.id===id):null;
-  const v=r||Object.assign({prenom:'',nom:'',tel:'',date:jour,heure:'10:00',duree:45,note:''},pre||{});
+  const v=r||Object.assign({prenom:'',nom:'',tel:'',date:jour,heure:'10:00',duree:45,note:'',proto:''},pre||{});
   const fp=data.gens[cle(v.prenom||'',v.nom||'')]; v.profil=fp?(fp.note||''):'';
-  const quand = id ? '' : `<div class="duo">
+  const verrou = !!(pre&&pre.verrou);
+  const quand = (id||verrou)
+    ? `<input type="hidden" id="f_date" value="${v.date}"><input type="hidden" id="f_heure" value="${v.heure}">`
+    : `<div class="duo">
       <div class="field"><label for="f_date">Date</label><input id="f_date" type="date" value="${v.date}"></div>
       <div class="field"><label for="f_heure">Heure</label><input id="f_heure" type="time" value="${v.heure}"></div>
     </div>`;
+  const listeP=[...data.protocoles];
+  if(v.proto && !listeP.includes(v.proto)) listeP.unshift(v.proto);
+  const proto = `<div class="field"><label for="f_proto">Protocole</label><select id="f_proto"><option value="">— aucun protocole —</option>${
+    listeP.map(x=>`<option${x===v.proto?' selected':''}>${esc(x)}</option>`).join('')}</select></div>`;
   document.getElementById('modal').innerHTML=`
   <div class="overlay" id="ov"><div class="sheet" role="dialog" aria-modal="true">
     <p class="sur">Séance</p><h2>${id?'Modifier le rendez-vous':'Nouveau rendez-vous'}</h2>
@@ -740,27 +764,33 @@ function formRdv(id,pre){
     </div>
     <div class="field"><label for="f_profil">Profil — à retenir sur cette personne</label><textarea id="f_profil" placeholder="Ce que vous voulez avoir sous les yeux à chaque séance">${esc(v.profil||'')}</textarea></div>
     <div class="field"><label for="f_tel">Téléphone</label><input id="f_tel" type="tel" value="${esc(v.tel)}"></div>
-    ${quand}
-    ${id?`<p style="color:var(--gris);font-size:12.5px;margin:-4px 0 14px">${esc(longDate(v.date))} à ${esc(jolie(v.heure))} · passez par « Reporter » pour changer la date ou l'heure.</p>`:''}
+    ${quand}${proto}
+    ${(id||verrou)?`<p style="color:var(--gris);font-size:12.5px;margin:-4px 0 14px">${esc(longDate(v.date))} à ${esc(jolie(v.heure))}${id?' · passez par « Reporter » pour changer la date ou l\'heure.':''}</p>`:''}
     <div class="field"><label for="f_note">Note de séance</label><textarea id="f_note">${esc(v.note)}</textarea></div>
     <div class="sheetacts"><button class="ghost" data-close="1">Annuler</button><button class="primary" data-saverdv="${id||''}">Enregistrer</button></div>
   </div></div>`;
-  setTimeout(()=>{ const el=document.getElementById((v.prenom&&!id)?'f_date':'f_prenom'); if(el) el.focus(); },30);
+  setTimeout(()=>{ const el=document.getElementById('f_prenom'); if(el) el.focus(); },30);
 }
 
 function formFormation(id){
+  pousser();
   const f=id?data.formations.find(x=>x.id===id):null;
-  const v=f||{titre:'',debut:'09:00',fin:'17:00',notes:'',parts:[]};
+  const v=f||{titre:'',date:jour,fin:jour,debut:'09:00',finH:'17:00',notes:'',parts:[]};
+  if(f){ v.finH=f.finH||f.fin2||'17:00'; v.fin=f.fin||f.date; }
   partTmp=(v.parts||[]).map(p=>({...p}));
   const dl=Object.values(data.gens).map(p=>`<option value="${esc(p.prenom+' '+p.nom)}">`).join('');
   document.getElementById('modal').innerHTML=`
   <div class="overlay" id="ov"><div class="sheet" role="dialog" aria-modal="true">
-    <p class="sur">${esc(longDate(jour))}</p><h2>${id?'Modifier la formation':'Formation ou stage'}</h2>
+    <p class="sur">Formation</p><h2>${id?'Modifier la formation':'Formation ou stage'}</h2>
     <p class="err" id="err"></p>
     <div class="field"><label for="t_titre">Intitulé</label><input id="t_titre" value="${esc(v.titre)}" placeholder="Journée de transmission"></div>
     <div class="duo">
-      <div class="field"><label for="t_debut">Début</label><input id="t_debut" type="time" value="${v.debut}"></div>
-      <div class="field"><label for="t_fin">Fin</label><input id="t_fin" type="time" value="${v.fin}"></div>
+      <div class="field"><label for="t_dd">Du</label><input id="t_dd" type="date" value="${v.date}"></div>
+      <div class="field"><label for="t_df">Au</label><input id="t_df" type="date" value="${v.fin}"></div>
+    </div>
+    <div class="duo">
+      <div class="field"><label for="t_debut">Chaque jour de</label><input id="t_debut" type="time" value="${v.debut}"></div>
+      <div class="field"><label for="t_finh">à</label><input id="t_finh" type="time" value="${v.finH}"></div>
     </div>
     <div class="field"><label for="t_part">Participants</label>
       <div class="inline"><input id="t_part" list="repertoire" placeholder="Nom du participant"><button class="ghost" id="addpart">Ajouter</button></div>
@@ -786,6 +816,7 @@ function ajouterPart(){
 }
 
 function formFiche(k){
+  pousser();
   const p=k?data.gens[k]:{prenom:'',nom:'',tel:'',note:''};
   document.getElementById('modal').innerHTML=`
   <div class="overlay" id="ov"><div class="sheet" role="dialog" aria-modal="true">
@@ -803,6 +834,7 @@ function formFiche(k){
 }
 
 function formReport(id){
+  pousser();
   const r=data.rdv.find(x=>x.id===id);
   document.getElementById('modal').innerHTML=`
   <div class="overlay" id="ov"><div class="sheet" role="dialog" aria-modal="true" style="max-width:400px">
@@ -818,6 +850,7 @@ function formReport(id){
 }
 
 function formOuvert(k){
+  pousser();
   const [d,h]=k.split('|'), o=data.ouverts[k]||{texte:'',fait:false};
   document.getElementById('modal').innerHTML=`
   <div class="overlay" id="ov"><div class="sheet" role="dialog" aria-modal="true" style="max-width:400px">
@@ -835,6 +868,7 @@ function formOuvert(k){
 }
 
 function formHoraire(h){
+  pousser();
   document.getElementById('modal').innerHTML=`
   <div class="overlay" id="ov"><div class="sheet" role="dialog" aria-modal="true" style="max-width:380px">
     <p class="sur">Horaires de l'après-midi</p><h2>Modifier ${esc(jolie(h))}</h2>
@@ -850,6 +884,7 @@ function formHoraire(h){
 }
 
 function demander(texte,action){
+  pousser();
   document.getElementById('modal').innerHTML=`
   <div class="overlay" id="ov"><div class="sheet" role="dialog" aria-modal="true" style="max-width:390px">
     <h2>Confirmer</h2><p style="margin:8px 0 0">${esc(texte)}</p>
@@ -866,8 +901,9 @@ function enregistrerRdv(id){
   if(!prenom&&!nom) return erreur('Indiquez au moins un prénom ou un nom.');
   if(!date||!heure) return erreur('La date et l\'heure sont nécessaires.');
   if(estDimanche(date)) return erreur('Le dimanche est réservé aux formations et aux stages.');
+  if(enFormation(date)) return erreur('Une formation occupe déjà cette journée.');
   const k=cle(prenom,nom);
-  const obj={id:id||uid(), cle:k, prenom, nom, tel:val('f_tel').trim(), date, heure, duree:(anc&&anc.duree)||45, note:val('f_note').trim(), cr:(anc&&anc.cr)||'', fait:(anc&&anc.fait)||false};
+  const obj={id:id||uid(), cle:k, prenom, nom, tel:val('f_tel').trim(), date, heure, duree:(anc&&anc.duree)||45, note:val('f_note').trim(), proto:val('f_proto'), cr:(anc&&anc.cr)||'', fait:(anc&&anc.fait)||false};
   if(id){ data.rdv[data.rdv.findIndex(x=>x.id===id)]=obj; } else data.rdv.push(obj);
   const f=data.gens[k]||{};
   data.gens[k]={cle:k, prenom, nom, tel:obj.tel||f.tel||'', note:val('f_profil').trim()};
@@ -875,10 +911,16 @@ function enregistrerRdv(id){
   fermer(); sauver(); rendre();
 }
 function enregistrerFormation(id){
-  const titre=val('t_titre').trim(), debut=val('t_debut'), fin=val('t_fin');
+  const titre=val('t_titre').trim(), debut=val('t_debut'), finH=val('t_finh');
+  const dd=val('t_dd'), df=val('t_df')||val('t_dd');
   if(!titre) return erreur('Donnez un intitulé à cette formation.');
-  if(!debut||!fin) return erreur('Indiquez les heures de début et de fin.');
-  const obj={id:id||uid(), date:jour, titre, debut, fin, notes:val('t_notes').trim(), parts:partTmp.map(p=>({...p}))};
+  if(!dd) return erreur('Indiquez la date de début.');
+  if(df<dd) return erreur('La date de fin est avant celle de début.');
+  if(!debut||!finH) return erreur('Indiquez les heures de début et de fin.');
+  const conflit=data.rdv.filter(r=>r.date>=dd&&r.date<=df);
+  if(conflit.length) return erreur(conflit.length+' rendez-vous sont déjà posés sur cette période. Déplacez-les avant.');
+  const obj={id:id||uid(), date:dd, fin:df, titre, debut, finH, notes:val('t_notes').trim(), parts:partTmp.map(p=>({...p}))};
+  jour=dd;
   if(id){ data.formations[data.formations.findIndex(x=>x.id===id)]=obj; } else data.formations.push(obj);
   fermer(); sauver(); rendre();
 }
@@ -897,7 +939,7 @@ function enregistrerFiche(k){
 document.addEventListener('click', e=>{
   const t=e.target.closest('button'); if(!t) return; const d=t.dataset;
 
-  if(t.classList.contains('tab')){ onglet=d.tab; rendre(); return; }
+  if(t.classList.contains('tab')){ const av=onglet; onglet=d.tab; if(av==='jour'&&d.tab!=='jour') pousser(); rendre(); return; }
   if(d.vue){ vue=d.vue; rendre(); return; }
   if(t.id==='prev'){ jour=decale(jour, vue==='semaine'?-7:-1); rendre(); return; }
   if(t.id==='next'){ jour=decale(jour, vue==='semaine'?7:1); rendre(); return; }
@@ -907,7 +949,7 @@ document.addEventListener('click', e=>{
   if(d.day){ jour=d.day; vue='jour'; onglet='jour'; fermer(); rendre(); return; }
   if(d.goto){ jour=d.goto; vue='jour'; rendre(); return; }
   if(d.gotof){ jour=d.gotof; vue='jour'; rendre(); formFormation(null); return; }
-  if(d.slot){ const [dt,h]=d.slot.split('|'); formRdv(null,{date:dt,heure:h}); return; }
+  if(d.slot){ const [dt,h]=d.slot.split('|'); formRdv(null,{date:dt,heure:h,verrou:true}); return; }
 
   if(d.new!==undefined){ formRdv(null); return; }
   if(d.newf!==undefined){ formFormation(null); return; }
@@ -929,6 +971,7 @@ document.addEventListener('click', e=>{
     const r=data.rdv.find(x=>x.id===d.savereport), nd=val('r_date'), nh=val('r_heure');
     if(!nd||!nh) return erreur('Indiquez une date et une heure.');
     if(estDimanche(nd)) return erreur('Le dimanche est réservé aux formations et aux stages.');
+    if(enFormation(nd)) return erreur('Une formation occupe déjà cette journée.');
     r.date=nd; r.heure=nh; jour=nd;
     fermer(); sauver(); rendre(); return;
   }
@@ -964,6 +1007,7 @@ document.addEventListener('click', e=>{
   }
   if(d.protoedit!==undefined){
     const i=Number(d.protoedit), anc=data.protocoles[i];
+    pousser();
     document.getElementById('modal').innerHTML=`
     <div class="overlay" id="ov"><div class="sheet" role="dialog" aria-modal="true" style="max-width:400px">
       <p class="sur">Protocole</p><h2>Renommer</h2><p class="err" id="err"></p>
@@ -1053,6 +1097,7 @@ document.addEventListener('touchend', e=>{
 },{passive:true});
 
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+pousser();
 
 charger();
 </script>
