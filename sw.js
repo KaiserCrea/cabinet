@@ -1,4 +1,4 @@
-const CACHE = 'mon-cabinet-v1';
+const CACHE = 'mon-cabinet-v2';
 const FICHIERS = [
   './',
   './index.html',
@@ -6,7 +6,9 @@ const FICHIERS = [
   './icones/icone-192.png',
   './icones/icone-512.png',
   './icones/icone-maskable-512.png',
-  './icones/icone-180.png'
+  './icones/icone-180.png',
+  './polices/lora.ttf',
+  './polices/lora-italique.ttf'
 ];
 
 self.addEventListener('install', e => {
