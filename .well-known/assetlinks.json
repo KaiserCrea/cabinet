@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.kaisercrea.cabinet",
+        "sha256_cert_fingerprints": ["5D:60:B8:02:8E:F4:E2:06:78:5C:24:AC:F8:E7:98:33:00:C2:65:AC:BA:33:92:78:9D:CC:7D:CE:0F:4C:86:31"]
+      }
+    }]
