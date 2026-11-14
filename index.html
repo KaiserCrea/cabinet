@@ -436,6 +436,13 @@ footer span{color:#FFFBEEC4;font-family:var(--serif);font-size:10px;letter-spaci
   .sheet{padding-left:18px;padding-right:18px}
 }
 
+#alerte-onglets{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:80;
+  display:flex;align-items:center;gap:12px;background:linear-gradient(180deg,#2E2745,#15101F);color:#F3E3B8;
+  border:1px solid #C9A54B88;border-radius:14px;padding:13px 15px;font-size:13.5px;line-height:1.4;
+  box-shadow:0 8px 28px #2a200866;max-width:620px;margin:0 auto}
+#alerte-onglets span{flex:1}
+#alerte-onglets button{border:0;background:none;color:#F3E3B8;font-size:20px;line-height:1;padding:0 4px}
+
 /* ---------- glissement entre onglets ---------- */
 #view,#head{animation:entre .22s ease-out}
 @keyframes entre{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
@@ -478,6 +485,7 @@ const APREM_DEFAUT = ['16:00','17:00','18:00','19:00'];
 const PROTO_DEFAUT = ['Scanner','Soins énergétiques',"Loi d'attraction",'Régression','Soins occultes','Contact médiumnique','Mémoire transgénérationnelle','Voyance','Développement des perceptions'];
 
 let data = { rdv:[], gens:{}, notes:[], formations:[], ouverts:{}, aprem:[...APREM_DEFAUT], protocoles:[...PROTO_DEFAUT] };
+let supprimes=new Set(), gensSupprimes=new Set(), monEcriture=-1;
 let onglet=(()=>{ try{ const v=sessionStorage.getItem('mc-onglet'); return ['jour','gens','notes','reglages'].includes(v)?v:'jour'; }catch(e){ return 'jour'; } })(),
     vue='jour', jour=isoToday(), recherche='', ouvert=null, ouvertCR=null, calMois=null, partTmp=[], saveTimer=null, ficheOuverte=null;
 
@@ -541,19 +549,96 @@ function lunes(debut, fin){
 function luneDu(d){ return lunes(decale(d,-1),decale(d,1))[d]||null; }
 
 /* ============ stockage ============ */
-async function charger(){
+const CLE_HIST='mon-cabinet-historique';
+
+function normaliser(p){
+  return {
+    rdv:p.rdv||[], gens:p.gens||{}, notes:p.notes||[], formations:p.formations||[],
+    ouverts:p.ouverts||{}, aprem:(p.aprem&&p.aprem.length)?p.aprem:[...APREM_DEFAUT],
+    protocoles:p.protocoles||[...PROTO_DEFAUT], v:p.v||0
+  };
+}
+function lireBrut(){
+  try{ const b=localStorage.getItem(KEY); return b?normaliser(JSON.parse(b)):null; }
+  catch(e){ return null; }
+}
+
+/* fusionne deux états : rien ne peut être effacé par un onglet en retard */
+function fusionner(mien, autre){
+  if(!autre) return mien;
+  const parId=(a,b)=>{
+    const m=new Map();
+    (b||[]).forEach(x=>m.set(x.id,x));
+    (a||[]).forEach(x=>m.set(x.id,x));   // le mien gagne sur un même identifiant
+    return [...m.values()];
+  };
+  const f={
+    rdv: parId(mien.rdv, autre.rdv),
+    formations: parId(mien.formations, autre.formations),
+    notes: parId(mien.notes, autre.notes),
+    gens: Object.assign({}, autre.gens||{}, mien.gens||{}),
+    ouverts: Object.assign({}, autre.ouverts||{}, mien.ouverts||{}),
+    aprem: mien.aprem, protocoles: mien.protocoles,
+    v: Math.max(mien.v||0, autre.v||0)+1
+  };
+  // ce que j'ai sciemment supprimé pendant cette session ne revient pas
+  if(supprimes.size){
+    f.rdv=f.rdv.filter(x=>!supprimes.has(x.id));
+    f.formations=f.formations.filter(x=>!supprimes.has(x.id));
+    f.notes=f.notes.filter(x=>!supprimes.has(x.id));
+  }
+  if(gensSupprimes.size){
+    gensSupprimes.forEach(k=>{ delete f.gens[k]; });
+    f.rdv=f.rdv.filter(x=>!gensSupprimes.has(x.cle));
+  }
+  return f;
+}
+
+/* garde les dix derniers états, pour pouvoir revenir en arrière */
+function archiver(etat){
   try{
-    const brut = localStorage.getItem(KEY);
-    if(brut){ const p=JSON.parse(brut);
-      data={rdv:p.rdv||[], gens:p.gens||{}, notes:p.notes||[], formations:p.formations||[], ouverts:p.ouverts||{}, aprem:(p.aprem&&p.aprem.length)?p.aprem:[...APREM_DEFAUT], protocoles:p.protocoles||[...PROTO_DEFAUT]};
-    }
+    const h=JSON.parse(localStorage.getItem(CLE_HIST)||'[]');
+    const n={le:Date.now(), rdv:(etat.rdv||[]).length, etat:JSON.stringify(etat)};
+    if(h.length && h[0].rdv===n.rdv && Date.now()-h[0].le < 900000) h[0]=n; else h.unshift(n);
+    localStorage.setItem(CLE_HIST, JSON.stringify(h.slice(0,10)));
   }catch(e){}
+}
+
+async function charger(){
+  const p=lireBrut();
+  if(p) data=p;
   rendre();
+}
+
+function ecrire(){
+  try{
+    const f=fusionner(data, lireBrut());
+    data=f;
+    localStorage.setItem(KEY, JSON.stringify(f));
+    archiver(f);
+    monEcriture=f.v;
+  }catch(e){ console.error('Enregistrement impossible', e); }
 }
 function sauver(){
   clearTimeout(saveTimer);
-  saveTimer=setTimeout(()=>{ try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(e){ console.error('Enregistrement impossible', e); } },250);
+  saveTimer=setTimeout(ecrire,250);
 }
+/* enregistrer sans attendre, quand l'application passe en arrière-plan */
+function sauverTout(){ clearTimeout(saveTimer); ecrire(); }
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden) sauverTout(); });
+window.addEventListener('pagehide', sauverTout);
+
+/* les onglets se tiennent au courant */
+window.addEventListener('storage', e=>{
+  if(e.key!==KEY || !e.newValue) return;
+  try{
+    const p=normaliser(JSON.parse(e.newValue));
+    if(p.v===monEcriture) return;
+    data=fusionner(p, data);
+    monEcriture=data.v;
+    if(!document.getElementById('modal').innerHTML) rendre();
+  }catch(err){}
+});
 
 /* ============ sélecteurs ============ */
 function grilleDu(){ return [...MATIN, ...data.aprem].sort((a,b)=>minutes(a)-minutes(b)); }
@@ -812,6 +897,9 @@ function selProto(id,val){
     liste.map(x=>`<option${x===val?' selected':''}>${esc(x)}</option>`).join('')}</select>`;
 }
 
+function lireHistorique(){
+  try{ return JSON.parse(localStorage.getItem(CLE_HIST)||'[]'); }catch(e){ return []; }
+}
 function vueReglages(){
   let html=`<p class="sectitle" style="margin-top:0">Mes protocoles</p>
     <p class="meta" style="margin-bottom:14px">Cette liste alimente le choix proposé après chaque séance.</p>`;
@@ -830,7 +918,22 @@ function vueReglages(){
     <p class="sectitle">Horaires</p>
     <p class="meta">Le matin est fixe. Les heures de l'après-midi se modifient en cliquant dessus dans la journée : ${data.aprem.map(h=>esc(jolie(h))).join(' · ')||'aucune'}.</p>
     <p class="sectitle">Mes données</p>
-    <p class="meta">Tout est enregistré sur cet appareil uniquement. Pensez à faire une sauvegarde de temps en temps, en bas de page.</p>`;
+    <p class="meta">Tout est enregistré sur cet appareil uniquement. Pensez à faire une sauvegarde de temps en temps, en bas de page.</p>
+    <p class="sectitle">Revenir en arrière</p>
+    <p class="meta">L'application garde seule les dix derniers états de l'agenda. Si quelque chose disparaît, vous pouvez repartir d'ici.</p>`;
+  const h=lireHistorique();
+  if(!h.length) html+=`<p class="meta" style="margin-top:10px">Aucun état enregistré pour l'instant.</p>`;
+  else{
+    html+='<div class="protos" style="margin-top:12px">';
+    h.forEach((x,i)=>{
+      const d=new Date(x.le);
+      const q=d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})
+        +' à '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+      html+=`<div class="proto"><span>${esc(q)}<br><small style="color:var(--bleu3)">${x.rdv} rendez-vous</small></span>
+        <button class="linkbtn" data-revenir="${i}">Revenir à cet état</button></div>`;
+    });
+    html+='</div>';
+  }
   return html;
 }
 
@@ -1156,6 +1259,15 @@ function formHoraire(h){
   </div></div>`;
 }
 
+function demanderOui(texte,libelle,action){
+  pousser();
+  document.getElementById('modal').innerHTML=`
+  <div class="overlay" id="ov"><div class="sheet" role="dialog" aria-modal="true" style="max-width:420px">
+    <p class="sur">Historique</p><h2>Confirmer</h2><p style="margin:8px 0 0;line-height:1.55">${esc(texte)}</p>
+    <div class="sheetacts"><button class="ghost" data-close="1">Annuler</button><button class="primary" id="oui">${esc(libelle)}</button></div>
+  </div></div>`;
+  document.getElementById('oui').onclick=()=>{ action(); fermer(); rendre(); };
+}
 function demander(texte,action){
   pousser();
   document.getElementById('modal').innerHTML=`
@@ -1241,7 +1353,7 @@ document.addEventListener('click', e=>{
   if(d.faito){ const o=data.ouverts[d.faito]; if(o){ o.fait=!o.fait; sauver(); rendre(); } return; }
   if(d.ouvrir){ formOuvert(d.ouvrir); return; }
   if(d.edito){ formOuvert(d.edito); return; }
-  if(d.delo){ delete data.ouverts[d.delo]; fermer(); sauver(); rendre(); return; }
+  if(d.delo){ delete data.ouverts[d.delo]; fermer(); sauverTout(); rendre(); return; }
   if(d.saveo){
     const txt=val('o_texte').trim();
     if(!txt) delete data.ouverts[d.saveo];
@@ -1257,8 +1369,8 @@ document.addEventListener('click', e=>{
     r.date=nd; r.heure=nh; jour=nd;
     fermer(); sauver(); rendre(); return;
   }
-  if(d.del){ demander('Supprimer ce rendez-vous ?', ()=>{ data.rdv=data.rdv.filter(x=>x.id!==d.del); }); return; }
-  if(d.delf){ demander('Supprimer cette formation ?', ()=>{ data.formations=data.formations.filter(x=>x.id!==d.delf); }); return; }
+  if(d.del){ demander('Supprimer ce rendez-vous ?', ()=>{ supprimes.add(d.del); data.rdv=data.rdv.filter(x=>x.id!==d.del); }); return; }
+  if(d.delf){ demander('Supprimer cette formation ?', ()=>{ supprimes.add(d.delf); data.formations=data.formations.filter(x=>x.id!==d.delf); }); return; }
   if(d.saverdv!==undefined){ enregistrerRdv(d.saverdv||null); return; }
   if(d.savef!==undefined){ enregistrerFormation(d.savef||null); return; }
   if(d.savefiche!==undefined){ enregistrerFiche(d.savefiche||null); return; }
@@ -1278,6 +1390,21 @@ document.addEventListener('click', e=>{
   }
   if(d.hdel){ data.aprem=data.aprem.filter(x=>x!==d.hdel); fermer(); sauver(); rendre(); return; }
 
+  if(d.revenir!==undefined){
+    const h=lireHistorique(), x=h[Number(d.revenir)];
+    if(!x) return;
+    const dd=new Date(x.le);
+    demanderOui(`Revenir à l'état du ${dd.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})} à ${dd.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})} ? L'agenda actuel sera remplacé — il est gardé dans l'historique, vous pourrez revenir en avant.`,
+      'Revenir', ()=>{
+        try{
+          archiver(data);
+          data=normaliser(JSON.parse(x.etat)); data.v=Date.now();
+          supprimes=new Set(); gensSupprimes=new Set();
+          localStorage.setItem(KEY, JSON.stringify(data)); monEcriture=data.v;
+        }catch(e){}
+      });
+    return;
+  }
   if(d.fichetech!==undefined){ ficheTechnique(d.fichetech); return; }
   if(t.id==='addproto'){
     const i=document.getElementById('np'), v=i.value.trim();
@@ -1316,7 +1443,9 @@ document.addEventListener('click', e=>{
   if(d.delp!==undefined){
     const p=data.gens[d.delp], n=rdvDe(d.delp).length;
     demander(`Supprimer ${p.prenom} ${p.nom} et ses ${n} rendez-vous ?`, ()=>{
-      delete data.gens[d.delp]; data.rdv=data.rdv.filter(r=>r.cle!==d.delp); ouvert=null; ouvertCR=null; });
+      gensSupprimes.add(d.delp); delete data.gens[d.delp];
+      data.rdv.filter(r=>r.cle===d.delp).forEach(r=>supprimes.add(r.id));
+      data.rdv=data.rdv.filter(r=>r.cle!==d.delp); ouvert=null; ouvertCR=null; });
     return;
   }
 
@@ -1325,7 +1454,7 @@ document.addEventListener('click', e=>{
     data.notes.push({id:uid(), texte:txt, fait:false, creee:Date.now()}); sauver(); rendre(); return;
   }
   if(d.tick){ const n=data.notes.find(x=>x.id===d.tick); n.fait=!n.fait; sauver(); rendre(); return; }
-  if(d.delnote){ data.notes=data.notes.filter(x=>x.id!==d.delnote); sauver(); rendre(); return; }
+  if(d.delnote){ supprimes.add(d.delnote); data.notes=data.notes.filter(x=>x.id!==d.delnote); sauver(); rendre(); return; }
 
   if(t.id==='export'){
     const b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
@@ -1354,8 +1483,11 @@ document.addEventListener('change', e=>{
     const f=e.target.files[0]; if(!f) return;
     const rd=new FileReader();
     rd.onload=()=>{ try{ const p=JSON.parse(rd.result);
-      data={rdv:p.rdv||[], gens:p.gens||{}, notes:p.notes||[], formations:p.formations||[], ouverts:p.ouverts||{}, aprem:(p.aprem&&p.aprem.length)?p.aprem:[...APREM_DEFAUT], protocoles:p.protocoles||[...PROTO_DEFAUT]};
-      sauver(); rendre();
+      archiver(data);
+      data=normaliser(p); data.v=Date.now();
+      supprimes=new Set(); gensSupprimes=new Set();
+      try{ localStorage.setItem(KEY, JSON.stringify(data)); monEcriture=data.v; }catch(err){}
+      rendre();
     }catch(err){ alert('Ce fichier n\'est pas une sauvegarde de Mon Cabinet.'); } };
     rd.readAsText(f);
   }
@@ -1401,6 +1533,38 @@ document.addEventListener('touchend', e=>{
   if(m-dernierTap<320 && !e.target.closest('input,textarea,select')) e.preventDefault();
   dernierTap=m;
 },{passive:false});
+
+(function onglets(){
+  const CLE='mon-cabinet-onglets';
+  const moi=Date.now()+'-'+Math.random().toString(36).slice(2,7);
+  function vivants(){
+    let l={}; try{ l=JSON.parse(localStorage.getItem(CLE)||'{}'); }catch(e){}
+    const n=Date.now();
+    Object.keys(l).forEach(k=>{ if(n-l[k]>12000) delete l[k]; });
+    return l;
+  }
+  function battre(){
+    const l=vivants(); l[moi]=Date.now();
+    try{ localStorage.setItem(CLE, JSON.stringify(l)); }catch(e){}
+    const n=Object.keys(l).length;
+    let b=document.getElementById('alerte-onglets');
+    if(n>1){
+      if(!b){
+        b=document.createElement('div'); b.id='alerte-onglets';
+        b.innerHTML='<span></span><button aria-label="Fermer">×</button>';
+        b.querySelector('button').onclick=()=>{ b.remove(); masque=true; };
+        document.body.appendChild(b);
+      }
+      if(!masque) b.querySelector('span').textContent =
+        'L\'agenda est ouvert dans '+n+' onglets. Fermez les autres pour éviter toute confusion.';
+      else b.remove();
+    } else if(b){ b.remove(); }
+  }
+  let masque=false;
+  battre(); setInterval(battre,6000);
+  window.addEventListener('pagehide',()=>{ const l=vivants(); delete l[moi];
+    try{ localStorage.setItem(CLE, JSON.stringify(l)); }catch(e){} });
+})();
 
 (function etoiles(){
   const f=document.getElementById('fond'); if(!f) return;

@@ -1,4 +1,4 @@
-const CACHE = 'mon-cabinet-v2';
+const CACHE = 'mon-cabinet-v3';
 const FICHIERS = [
   './',
   './index.html',
