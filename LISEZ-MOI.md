@@ -1,54 +1,47 @@
-# Mon Cabinet — mise à jour du 13 novembre 2026 (soir)
+# Mon Cabinet — mise à jour du 15 novembre 2026
 
 ## Ce qu'il faut déposer sur GitHub
 
 ```
 index.html              remplace l'ancien
 sw.js                   remplace l'ancien
-manifest.webmanifest    remplace l'ancien
-polices/                NOUVEAU DOSSIER à ajouter
-    lora.ttf
-    lora-italique.ttf
-icones/                 inchangé
+polices/ecriture.ttf    NOUVEAU fichier à ajouter dans le dossier polices
 ```
 
-Puis ouvrir l'application en wifi et **recharger deux fois**.
+Le reste ne bouge pas : les icônes, le manifeste, les deux polices Lora
+et le fichier .well-known restent tels quels.
 
-## Protection des données — le correctif
+L'application installée sur la tablette prendra la mise à jour toute
+seule au prochain lancement en wifi. **L'APK n'est pas à refaire.**
+Si l'ancien habillage persiste, fermer l'application complètement et la
+rouvrir une seconde fois.
 
-Un défaut faisait que chaque onglet gardait sa propre copie des
-rendez-vous et réécrivait tout le stockage. Un onglet ouvert depuis
-plusieurs heures pouvait ainsi effacer le travail fait ailleurs.
+## Le nouvel habillage
 
-Trois protections :
+- le haut de la page devient un **bandeau sombre**, une nuit dorée fermée
+  par un filet lumineux ; la date y est agrandie et nimbée
+- l'écriture passe à une **cursive** proche de celle du site de Cathy,
+  en noir, avec le trait épaissi
+- les **chiffres** (horaires, téléphones) et les **libellés en capitales**
+  restent dans la serif Lora : une cursive en capitales est illisible
+- les fiches de rendez-vous deviennent **parchemin**, avec un dégradé en
+  diagonale, un double filet doré et une ombre plus profonde
+- les lignes « libre » perdent leur pointillé au profit d'un filet fin
+- le fond reçoit un grain de papier, la barre d'onglets est affinée
+- tout le texte est plus grand qu'avant
 
-- **Les onglets se synchronisent.** Dès qu'un onglet enregistre,
-  les autres se mettent à jour dans la seconde.
-- **L'écriture fusionne.** Avant chaque enregistrement, l'application
-  relit ce qui est stocké et ajoute au lieu de remplacer. Les
-  suppressions volontaires sont respectées.
-- **Historique automatique.** Les dix derniers états sont conservés.
-  Onglet *Réglages*, section **Revenir en arrière** : chaque état
-  porte sa date, son heure et son nombre de rendez-vous.
+Les écrans qui étaient restés dans l'ancien habillage ont été repris :
+vue Semaine, calendrier, Personnes, Pense-bête, Réglages, formulaires,
+écran du dimanche, rendez-vous honorés et formations.
 
-Un bandeau avertit désormais quand l'agenda est ouvert dans plusieurs
-onglets à la fois.
+## Nouveau : la taille du texte se règle
 
-L'enregistrement est aussi forcé dès que l'application passe en
-arrière-plan, au lieu d'attendre.
+Onglet **Réglages**, tout en haut : **Taille du texte**, quatre crans —
+normal, grand, très grand, maximum. Le choix s'applique à toute
+l'application et reste mémorisé.
 
-## Le reste de la mise à jour
+## Ce qui ne change pas
 
-- fond doré, étoiles, titre du jour en or brossé
-- barre d'onglets dorée sur toute la largeur
-- cartes cernées d'un filet doré, écriture bleu nuit
-- police Lora embarquée (aucun accès internet)
-- répertoire proposé dès les premières lettres, remplit téléphone et profil
-- glissement du doigt entre onglets ; en haut de la Journée, change de jour
-- onglet retenu au rechargement, retour à Journée après fermeture complète
-- plus de zoom au double-tap, plus de rebond élastique
-
-## Conseil
-
-Fermer les onglets en trop sur la tablette, et n'ouvrir l'agenda que
-depuis un seul endroit.
+La protection contre la perte de données reste en place, ainsi que
+l'historique des dix derniers états dans les Réglages. Les rendez-vous
+de Cathy ne sont pas touchés par cette mise à jour.
